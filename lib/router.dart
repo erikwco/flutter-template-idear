@@ -6,6 +6,8 @@ import 'package:mini_flutter/state/auth_controller.dart';
 import 'package:mini_flutter/ui/home_screen.dart';
 import 'package:mini_flutter/ui/live_screen.dart';
 import 'package:mini_flutter/ui/login_screen.dart';
+import 'package:mini_flutter/ui/products/product_list_screen.dart';
+import 'package:mini_flutter/ui/products/product_detail_screen.dart';
 
 final goRouterProvider = Provider<GoRouter>((ref) {
   // Bridge between Riverpod and Gorouter: Listenable
@@ -33,6 +35,12 @@ final goRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(path: '/login', builder: (_, _) => const LoginScreen()),
       GoRoute(path: '/home', builder: (_, _) => const HomeScreen()),
       GoRoute(path: '/live', builder: (_, _) => const LiveScreen()),
+      GoRoute(path: '/products', builder: (_, _) => const ProductListScreen()),
+      GoRoute(
+        path: '/products/:id',
+        builder: (_, s) =>
+            ProductDetailScreen(id: s.pathParameters['id']!), // próxima parte
+      ),
     ],
   );
 });

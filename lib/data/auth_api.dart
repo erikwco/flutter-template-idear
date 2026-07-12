@@ -1,37 +1,47 @@
 import 'package:dio/dio.dart';
-import 'package:mini_flutter/data/secure_store.dart';
+import 'package:mini_flutter/domain/auth.dart';
 
-class ApiClient {
-  final Dio dio;
-  final SecureStore store;
+class AuthApi {
+  final Dio _dio;
+  AuthApi(this._dio);
 
-  ApiClient(this.store)
-    : dio = Dio(
-        BaseOptions(
-          baseUrl: 'http://localhost:9090',
-          connectTimeout: const Duration(seconds: 10),
-        ),
-      ) {
-    // intercepta las llamadas HTTP para inyectar el Beaarer token
-    dio.interceptors.add(
-      InterceptorsWrapper(
-        onRequest: (options, handler) async {
-          final t = await store.readAccess();
-          if (t != null) {
-            options.headers['Authorization'] = 'Bearer $t';
-          }
-          handler.next(options);
-        },
-        // Importante para manejar el refresh del token
-        onError: (error, handler) async {
-          if (error.response?.statusCode == 401) {
-            // POST al llamado del refresh
-            // Guardar nuevo token
-            // Reintentar
-          }
-          handler.next(error);
-        },
+  /// POST /auth/login → { id, email, access, refresh }
+  /// El server manda user y tokens juntos → devolvemos ambos con un record.
+  Future<({User user, Token token})> login(
+    String email,
+    String password,
+  ) async {
+    final res = await _dio.post(
+      '/auth/login',
+      data: {'email': email, 'password': password},
+    );
+    final d = res.data as Map<String, dynamic>;
+    return (
+      user: User(id: d['id'] as String, email: d['email'] as String),
+      token: Token(
+        access: d['access'] as String,
+        refresh: d['refresh'] as String,
       ),
+    );
+  }
+
+  /// GET /auth/me → { id, email }  (el interceptor inyecta el Bearer)
+  Future<User> me() async {
+    final res = await _dio.get('/auth/me');
+    final d = res.data as Map<String, dynamic>;
+    return User(id: d['id'] as String, email: d['email'] as String);
+  }
+
+  /// POST /auth/refresh { refresh } → { access, refresh }
+  Future<Token> refresh(String refreshToken) async {
+    final res = await _dio.post(
+      '/auth/refresh',
+      data: {'refresh': refreshToken},
+    );
+    final d = res.data as Map<String, dynamic>;
+    return Token(
+      access: d['access'] as String,
+      refresh: d['refresh'] as String,
     );
   }
 }

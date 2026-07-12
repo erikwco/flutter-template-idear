@@ -28,6 +28,10 @@ class HomeScreen extends ConsumerWidget {
               onPressed: () => context.go('/live'),
               child: const Text('Ver demo de Stream'),
             ),
+            FilledButton(
+              onPressed: () => context.go('/products'),
+              child: const Text('Ver listado de productos'),
+            ),
           ],
         ),
       ),

@@ -1,15 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mini_flutter/data/auth_repository.dart';
-import 'package:mini_flutter/data/secure_store.dart';
 import 'package:mini_flutter/domain/auth.dart';
-
-// Provider
-// Secure Provide defines all the methods to access the secure storage a.k.a. wrapper
-final secureStoreProvider = Provider((ref) => SecureStore());
-// Authentication Repositoryu Provider defines all the methods to access the authentication repository
-final authRepositoryProvider = Provider(
-  (ref) => AuthRepository(ref.read(secureStoreProvider)),
-);
+import 'package:mini_flutter/state/providers.dart';
 
 class AuthController extends Notifier<AuthState> {
   // Instance of the Auth repository

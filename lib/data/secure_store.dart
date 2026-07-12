@@ -4,8 +4,8 @@ class SecureStore {
   static const _s = FlutterSecureStorage();
 
   Future<void> saveTokens(String access, String refresh) async {
-    await _s.write(key: 'access', value: 'access');
-    await _s.write(key: 'refresh', value: 'refre');
+    await _s.write(key: 'access', value: access);
+    await _s.write(key: 'refresh', value: refresh);
   }
 
   Future<String?> readAccess() => _s.read(key: 'access');
