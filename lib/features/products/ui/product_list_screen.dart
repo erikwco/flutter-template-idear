@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:forui/forui.dart';
-import 'package:mini_flutter/state/product_list_controller.dart';
-import 'package:mini_flutter/ui/products/product_skeleton.dart';
-import 'package:mini_flutter/ui/products/product_card.dart';
-import 'package:mini_flutter/ui/products/error_view.dart';
+import 'package:mini_flutter/features/products/state/product_list_controller.dart';
+import 'package:mini_flutter/features/products/ui/error_view.dart';
+import 'package:mini_flutter/features/products/ui/product_card.dart';
+import 'package:mini_flutter/features/products/ui/product_skeleton.dart';
 
 class ProductListScreen extends ConsumerWidget {
   const ProductListScreen({super.key});

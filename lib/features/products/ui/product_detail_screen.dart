@@ -2,8 +2,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:mini_flutter/domain/product.dart';
-import 'package:mini_flutter/state/providers.dart';
+import 'package:mini_flutter/features/products/state/product_detail_controller.dart';
 
 class ProductDetailScreen extends ConsumerWidget {
   final String id;
@@ -11,7 +10,7 @@ class ProductDetailScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final productoAsync = ref.watch(_productProvider(id));
+    final productoAsync = ref.watch(productProvider(id));
 
     return Scaffold(
       backgroundColor: const Color(0xFF09090B),
@@ -83,11 +82,3 @@ class ProductDetailScreen extends ConsumerWidget {
     );
   }
 }
-
-// Un producto por id. `.family` parametriza el provider con el id.
-final _productProvider = FutureProvider.family<Product, String>((
-  ref,
-  id,
-) async {
-  return ref.read(productApiProvider).get(id);
-});

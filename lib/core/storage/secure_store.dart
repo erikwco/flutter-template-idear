@@ -1,3 +1,4 @@
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 class SecureStore {
@@ -12,3 +13,5 @@ class SecureStore {
   Future<String?> readRefresh() => _s.read(key: 'refresh');
   Future<void> clear() => _s.deleteAll();
 }
+
+final secureStoreProvider = Provider<SecureStore>((ref) => SecureStore());

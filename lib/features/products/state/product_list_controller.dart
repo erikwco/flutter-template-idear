@@ -1,6 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:mini_flutter/domain/product.dart';
-import 'package:mini_flutter/state/providers.dart';
+import 'package:mini_flutter/features/products/data/product_api.dart';
+import 'package:mini_flutter/features/products/domain/product.dart';
 
 class ProductListNotifier extends AsyncNotifier<List<Product>> {
   // build() async → el estado inicial es AsyncLoading AUTOMÁTICAMENTE

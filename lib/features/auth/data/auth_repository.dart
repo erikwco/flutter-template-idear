@@ -1,6 +1,7 @@
-import 'package:mini_flutter/data/auth_api.dart';
-import 'package:mini_flutter/data/secure_store.dart';
-import 'package:mini_flutter/domain/auth.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:mini_flutter/core/storage/secure_store.dart';
+import 'package:mini_flutter/features/auth/data/auth_api.dart';
+import 'package:mini_flutter/features/auth/domain/auth.dart';
 
 class AuthRepository {
   final AuthApi api;
@@ -25,3 +26,10 @@ class AuthRepository {
 
   Future<void> logout() => store.clear();
 }
+
+final authRepositoryProvider = Provider<AuthRepository>(
+  (ref) => AuthRepository(
+    api: ref.watch(authApiProvider),
+    store: ref.watch(secureStoreProvider),
+  ),
+);

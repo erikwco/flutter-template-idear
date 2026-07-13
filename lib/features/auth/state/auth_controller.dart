@@ -1,7 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:mini_flutter/data/auth_repository.dart';
-import 'package:mini_flutter/domain/auth.dart';
-import 'package:mini_flutter/state/providers.dart';
+import 'package:mini_flutter/features/auth/data/auth_repository.dart';
+import 'package:mini_flutter/features/auth/domain/auth.dart';
 
 class AuthController extends Notifier<AuthState> {
   // Instance of the Auth repository

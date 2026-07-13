@@ -1,5 +1,7 @@
 import 'package:dio/dio.dart';
-import 'package:mini_flutter/domain/auth.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:mini_flutter/core/network/dio_provider.dart';
+import 'package:mini_flutter/features/auth/domain/auth.dart';
 
 class AuthApi {
   final Dio _dio;
@@ -45,3 +47,7 @@ class AuthApi {
     );
   }
 }
+
+final authApiProvider = Provider<AuthApi>(
+  (ref) => AuthApi(ref.watch(dioProvider)),
+);

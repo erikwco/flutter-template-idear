@@ -1,5 +1,7 @@
 import 'package:dio/dio.dart';
-import 'package:mini_flutter/domain/product.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:mini_flutter/core/network/dio_provider.dart';
+import 'package:mini_flutter/features/products/domain/product.dart';
 
 class ProductApi {
   final Dio _dio;
@@ -18,3 +20,7 @@ class ProductApi {
     return Product.fromJson(res.data as Map<String, dynamic>);
   }
 }
+
+final productApiProvider = Provider<ProductApi>(
+  (ref) => ProductApi(ref.watch(dioProvider)),
+);

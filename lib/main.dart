@@ -2,8 +2,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:forui/forui.dart';
-import 'router.dart';
-import 'theme.dart';
+import 'package:mini_flutter/core/router/router.dart';
+import 'package:mini_flutter/core/theme/theme.dart';
 
 void main() {
   runApp(const ProviderScope(child: App()));

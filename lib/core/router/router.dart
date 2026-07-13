@@ -1,13 +1,13 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:mini_flutter/domain/auth.dart';
-import 'package:mini_flutter/state/auth_controller.dart';
-import 'package:mini_flutter/ui/home_screen.dart';
-import 'package:mini_flutter/ui/live_screen.dart';
-import 'package:mini_flutter/ui/login_screen.dart';
-import 'package:mini_flutter/ui/products/product_list_screen.dart';
-import 'package:mini_flutter/ui/products/product_detail_screen.dart';
+import 'package:mini_flutter/features/auth/domain/auth.dart';
+import 'package:mini_flutter/features/auth/state/auth_controller.dart';
+import 'package:mini_flutter/features/auth/ui/login_screen.dart';
+import 'package:mini_flutter/features/home/ui/home_screen.dart';
+import 'package:mini_flutter/features/live/ui/live_screen.dart';
+import 'package:mini_flutter/features/products/ui/product_detail_screen.dart';
+import 'package:mini_flutter/features/products/ui/product_list_screen.dart';
 
 final goRouterProvider = Provider<GoRouter>((ref) {
   // Bridge between Riverpod and Gorouter: Listenable
