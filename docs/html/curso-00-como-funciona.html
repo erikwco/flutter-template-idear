@@ -1,0 +1,170 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="darkreader-lock">
+<title>Curso 00 · Cómo funciona esta escuela — Escuela Flutter</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@500;700;800&family=Instrument+Sans:ital,wght@0,400;0,600;1,400&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/base.css">
+</head>
+<body>
+
+<header class="curso-header">
+  <div class="contenedor">
+    <a class="volver" href="index.html">← índice</a>
+    <p class="eyebrow">Curso 00 · meta</p>
+    <h1 class="titulo-display">Cómo funciona esta escuela</h1>
+    <p class="lead">Las reglas del juego, la estructura de los cursos y cómo crecerá este laboratorio junto con el template.</p>
+  </div>
+</header>
+
+<main class="prose">
+  <div class="contenedor">
+
+    <h2>El objetivo</h2>
+    <p>
+      Construir un <strong>template Flutter reutilizable</strong> cuya primera
+      aplicación real será la versión móvil del ERP <strong>Gibbor</strong>
+      (hoy en React Router v8). Cada decisión del template se estudia en un
+      mini-curso antes o mientras se implementa, siempre traduciendo desde lo
+      que ya conoces de React.
+    </p>
+
+    <h2>Las reglas del juego</h2>
+    <ul>
+      <li><strong>Erik escribe el código.</strong> Claude solo modifica archivos cuando se le pide explícitamente.</li>
+      <li><strong>Cada consulta puede volverse un curso.</strong> Si la respuesta merece quedar documentada, se crea su página y se registra en el índice.</li>
+      <li><strong>Todo se traduce desde React.</strong> Los cursos usan comparaciones lado a lado: cómo lo harías en Gibbor, cómo se hace en Flutter.</li>
+      <li><strong>El código real manda.</strong> Los ejemplos citan archivos reales de <code>lib/</code>, no código de juguete.</li>
+      <li><strong>Nada queda mal hecho.</strong> Todo lo que se escribe es production-grade; un tema puede empezar simple, pero se lleva hasta el nivel producción antes de cerrarse.</li>
+    </ul>
+
+    <h2>Andamiaje: tres niveles</h2>
+    <p>
+      El acompañamiento baja de intensidad conforme Erik recupera el músculo de Flutter
+      (liberación gradual de responsabilidad). En cualquier momento, cualquiera de los dos
+      puede pedir subir o bajar de nivel — y un tema nuevo difícil puede volver al nivel 1
+      aunque el resto del proyecto vaya en el 3.
+    </p>
+    <ul>
+      <li><strong>Nivel 1 · Código completo</strong> (cursos ~01–03): Claude muestra el código anotado; Erik lo teclea (nunca copy-paste) y explica una línea a elección de Claude. Antes de mostrar, una predicción: "¿qué crees que va aquí?".</li>
+      <li><strong>Nivel 2 · Hints</strong> (~04–07): firmas, estructura y pistas; Erik rellena. Se llega aquí cuando escribe providers/notifiers sin mirar referencia.</li>
+      <li><strong>Nivel 3 · Solo</strong> (~08–11): Erik escribe; Claude hace code review después. Se llega aquí cuando las soluciones vuelven sin correcciones estructurales.</li>
+    </ul>
+
+    <h2>Anatomía de un curso</h2>
+    <p>
+      Cada curso es un HTML independiente creado a partir de
+      <code>_plantilla-curso.html</code>. Todos comparten
+      <code>assets/base.css</code>, así que el estilo es consistente sin
+      repetir nada. Los bloques disponibles:
+    </p>
+
+    <div class="comparacion">
+      <div>
+        <span class="archivo">React (Gibbor)</span>
+<pre><code>// Así se ven las comparaciones:
+// izquierda, lo que ya dominas
+export async function loader() {
+  return getProducts();
+}</code></pre>
+      </div>
+      <div>
+        <span class="archivo">Flutter (mini_flutter)</span>
+<pre><code>// derecha, su equivalente Flutter
+final productsProvider =
+  FutureProvider((ref) =>
+    ref.read(apiProvider).getProducts());</code></pre>
+      </div>
+    </div>
+
+    <div class="insight">
+      <strong>★ Insight.</strong> Así se ven las notas clave: la idea que
+      conecta el detalle técnico con el panorama general del template.
+    </div>
+
+    <h2>Las demos son interactivas</h2>
+    <p>
+      Cuando un concepto lo amerite, el curso incluye demos con SVG, canvas,
+      GSAP o three.js. Esta usa el concepto más famoso de Flutter — la UI es
+      una función del estado — sin ninguna librería:
+    </p>
+
+    <div class="demo">
+      <p class="demo-titulo">demo · UI = f(estado)</p>
+      <div id="widget-demo" style="font-family: var(--f-mono); font-size: 0.9rem;">
+        <p style="margin-top:0">estado actual: <code id="estado-valor">contador = 0</code></p>
+        <div id="caja" style="
+          width: 72px; height: 72px; border-radius: 14px;
+          background: var(--azul); color: #fff;
+          display: flex; align-items: center; justify-content: center;
+          font-size: 1.4rem; font-weight: 600;
+          transition: transform 0.25s ease, background 0.25s ease;
+        ">0</div>
+        <button id="boton-rebuild" style="
+          margin-top: 1rem; font-family: var(--f-mono); font-size: 0.85rem;
+          background: var(--ambar); color: #fff; border: none;
+          border-radius: 8px; padding: 0.5rem 1rem; cursor: pointer;
+        ">setState( ) ⚡</button>
+        <p style="color: var(--ink-suave); margin-bottom: 0;">
+          El botón no toca la caja: solo cambia el estado. La "caja-widget"
+          se reconstruye sola a partir de él — igual que un rebuild de Flutter
+          o un re-render de React.
+        </p>
+      </div>
+    </div>
+
+    <h2>Cómo se agrega un curso</h2>
+    <ol>
+      <li>Copiar <code>_plantilla-curso.html</code> → <code>curso-NN-tema.html</code>.</li>
+      <li>Registrarlo en el array <code>CURSOS</code> de <code>index.html</code>:</li>
+    </ol>
+
+    <span class="archivo">docs/html/index.html</span>
+<pre><code>const CURSOS = [
+  // ...
+  {
+    num: "01",
+    titulo: "Título del curso",
+    desc: "Qué responde este curso, en una frase.",
+    href: "curso-01-tema.html",
+    estado: "en-curso", // pendiente | en-curso | completado
+  },
+];</code></pre>
+
+  </div>
+</main>
+
+<footer class="paginacion">
+  <div class="contenedor" style="display:flex; justify-content:space-between; gap:1rem;">
+    <span></span>
+    <a href="index.html">índice</a>
+    <span style="color: var(--ink-suave)">siguiente: tu primera consulta</span>
+  </div>
+</footer>
+
+<script>
+  // Demo UI = f(estado): un solo dato (contador) y una función render()
+  // que reconstruye la vista. Nadie muta el DOM "a mano" fuera de render.
+  let contador = 0;
+
+  const caja = document.getElementById("caja");
+  const valor = document.getElementById("estado-valor");
+
+  function render() {
+    valor.textContent = `contador = ${contador}`;
+    caja.textContent = contador;
+    caja.style.transform = `rotate(${contador * 12}deg) scale(${1 + Math.min(contador, 10) * 0.03})`;
+    caja.style.background = contador % 2 === 0 ? "var(--azul)" : "var(--verde)";
+  }
+
+  document.getElementById("boton-rebuild").addEventListener("click", () => {
+    contador++;   // 1. cambia el estado
+    render();     // 2. la UI se reconstruye a partir del estado
+  });
+</script>
+
+</body>
+</html>

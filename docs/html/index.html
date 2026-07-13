@@ -1,0 +1,338 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<!-- La página trae su propio modo claro/oscuro; esto le pide a Dark Reader que no la repinte -->
+<meta name="darkreader-lock">
+<title>Escuela Flutter — mini_flutter</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@500;700;800&family=Instrument+Sans:ital,wght@0,400;0,600;1,400&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/base.css">
+<style>
+  /* ---- estilos exclusivos del índice ---- */
+
+  .masthead { padding: 4.5rem 0 3rem; }
+
+  .stack-pills {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-top: 1.75rem;
+    padding: 0;
+    list-style: none;
+  }
+
+  /* ---- el árbol de widgets: firma de la página ---- */
+
+  .plan { padding-bottom: 5rem; }
+
+  .plan-cabecera {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 1rem;
+    flex-wrap: wrap;
+    margin-bottom: 1.5rem;
+  }
+
+  .plan-cabecera h2 {
+    font-family: var(--f-display);
+    font-size: 1.5rem;
+    margin: 0;
+  }
+
+  .plan-hint {
+    font-family: var(--f-mono);
+    font-size: 0.78rem;
+    color: var(--ink-suave);
+  }
+
+  .arbol {
+    font-family: var(--f-mono);
+    font-size: 0.9rem;
+    background: var(--card);
+    border: 1px solid var(--linea);
+    border-radius: var(--radio);
+    padding: 1.75rem 1.5rem 1.75rem 2rem;
+  }
+
+  .arbol-linea { color: var(--ink-suave); padding: 0.1rem 0; }
+
+  .arbol-lista {
+    list-style: none;
+    margin: 0.4rem 0;
+    padding-left: 1.1rem;
+    border-left: 2px solid var(--linea);
+  }
+
+  .nodo {
+    position: relative;
+    margin: 0.9rem 0;
+    padding-left: 1.4rem;
+    animation: aparecer 0.45s ease-out backwards;
+  }
+
+  /* conector horizontal del árbol hacia cada nodo */
+  .nodo::before {
+    content: "";
+    position: absolute;
+    left: -1.1rem;
+    top: 1.35rem;
+    width: 1.9rem;
+    border-top: 2px solid var(--linea);
+  }
+
+  @keyframes aparecer {
+    from { opacity: 0; transform: translateX(-8px); }
+    to   { opacity: 1; transform: none; }
+  }
+
+  .nodo-card {
+    display: block;
+    background: var(--paper);
+    border: 1px solid var(--linea);
+    border-radius: var(--radio);
+    padding: 0.9rem 1.1rem;
+    text-decoration: none;
+    color: inherit;
+    transition: border-color 0.15s ease, transform 0.15s ease;
+  }
+
+  a.nodo-card:hover { border-color: var(--azul); transform: translateX(3px); }
+
+  .nodo-top {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+  }
+
+  .nodo-num { color: var(--azul); font-weight: 600; }
+
+  .nodo-titulo {
+    font-family: var(--f-cuerpo);
+    font-weight: 600;
+    font-size: 1.02rem;
+  }
+
+  .nodo-desc {
+    font-family: var(--f-cuerpo);
+    color: var(--ink-suave);
+    font-size: 0.92rem;
+    margin: 0.35rem 0 0;
+  }
+
+  .estado {
+    font-size: 0.72rem;
+    border-radius: 999px;
+    padding: 0.1rem 0.6rem;
+    margin-left: auto;
+  }
+
+  .estado-pendiente  { background: #e8eef5; color: var(--ink-suave); }
+  .estado-en-curso   { background: #fdf3e2; color: var(--ambar); }
+  .estado-completado { background: #e2f3ea; color: var(--verde); }
+
+  @media (prefers-color-scheme: dark) {
+    .estado-pendiente  { background: #1b2c40; }
+    .estado-en-curso   { background: #3a2c10; }
+    .estado-completado { background: #11331f; }
+  }
+
+  .vacio {
+    color: var(--ink-suave);
+    font-style: italic;
+    padding: 0.5rem 0;
+  }
+
+  .pie {
+    border-top: 1px solid var(--linea);
+    padding: 2rem 0 4rem;
+    color: var(--ink-suave);
+    font-size: 0.9rem;
+  }
+
+  .pie code {
+    font-family: var(--f-mono);
+    font-size: 0.85em;
+    background: var(--resalte);
+    border-radius: 5px;
+    padding: 0.1em 0.4em;
+  }
+</style>
+</head>
+<body>
+
+<header class="masthead">
+  <div class="contenedor">
+    <p class="eyebrow">mini_flutter · laboratorio de aprendizaje</p>
+    <h1 class="titulo-display">De React a Flutter,<br>widget por widget.</h1>
+    <p class="lead">
+      Bitácora de mini-cursos para construir un template Flutter reutilizable:
+      primero para la app móvil del ERP <strong>Gibbor</strong> (React Router v8),
+      después para lo que venga. Erik escribe el código; cada curso explica el porqué.
+    </p>
+    <ul class="stack-pills" aria-label="Stack del template">
+      <li class="pill">flutter_riverpod 3</li>
+      <li class="pill">go_router 17</li>
+      <li class="pill">dio 5</li>
+      <li class="pill">flutter_secure_storage</li>
+      <li class="pill">forui</li>
+      <li class="pill">flutter_animate</li>
+    </ul>
+  </div>
+</header>
+
+<main class="plan">
+  <div class="contenedor">
+    <div class="plan-cabecera">
+      <h2>Plan de estudios</h2>
+      <span class="plan-hint">cada curso es una página independiente</span>
+    </div>
+
+    <!-- El índice se dibuja como el árbol de widgets de Flutter DevTools:
+         la escuela es la raíz, cada curso es un nodo hijo. -->
+    <div class="arbol" id="arbol">
+      <div class="arbol-linea">runApp(</div>
+      <div class="arbol-linea">&nbsp;&nbsp;EscuelaFlutter(</div>
+      <ul class="arbol-lista" id="lista-cursos"></ul>
+      <div class="arbol-linea">&nbsp;&nbsp;)</div>
+      <div class="arbol-linea">)</div>
+    </div>
+  </div>
+</main>
+
+<footer class="pie">
+  <div class="contenedor">
+    Para agregar un curso: crea su página a partir de
+    <code>_plantilla-curso.html</code> y añade una entrada al array
+    <code>CURSOS</code> al final de este archivo.
+  </div>
+</footer>
+
+<script>
+  // ---- registro de cursos ----------------------------------------
+  // Un curso = un objeto. La página se renderiza sola a partir de esto.
+  // estado: "pendiente" | "en-curso" | "completado"
+  const CURSOS = [
+    {
+      num: "00",
+      titulo: "Cómo funciona esta escuela",
+      desc: "Las reglas del juego, la estructura de docs/html y cómo se agrega un curso nuevo.",
+      href: "curso-00-como-funciona.html",
+      estado: "completado",
+    },
+    {
+      num: "01",
+      titulo: "La arquitectura del template",
+      desc: "¿Está bien la estructura? Veredicto, las 4 capas, diagrama interactivo de inyecciones y el flujo de seguridad completo.",
+      href: "curso-01-arquitectura.html",
+      estado: "en-curso",
+    },
+    {
+      num: "02",
+      titulo: "Riverpod a fondo",
+      desc: "Provider, Notifier, AsyncNotifier, StreamProvider, family y autoDispose — y qué hacen realmente ref.read, watch y listen.",
+      href: "#",
+      estado: "pendiente",
+    },
+    {
+      num: "03",
+      titulo: "Seguridad I: el ciclo de vida del token",
+      desc: "Refresh automático en el interceptor, restore robusto al abrir la app y logout limpio.",
+      href: "#",
+      estado: "pendiente",
+    },
+    {
+      num: "04",
+      titulo: "Navegación real",
+      desc: "Del botón hechizo a un shell con menú: StatefulShellRoute, rutas anidadas y transiciones.",
+      href: "#",
+      estado: "pendiente",
+    },
+    {
+      num: "05",
+      titulo: "Diseño con identidad",
+      desc: "Wireframe → sistema de diseño propio sobre forui: color, iconos y micro-animaciones que no parezcan template.",
+      href: "#",
+      estado: "pendiente",
+    },
+    {
+      num: "06",
+      titulo: "CRUD de productos production-grade",
+      desc: "Crear, editar y desactivar productos: validación, escritura optimista y manejo de errores completo.",
+      href: "#",
+      estado: "pendiente",
+    },
+    {
+      num: "07",
+      titulo: "Streams a fondo",
+      desc: "El caso de uso fuerte: inventario en vivo vía SSE desde el API Go — suscripción, transformación y reconexión.",
+      href: "#",
+      estado: "pendiente",
+    },
+    {
+      num: "08",
+      titulo: "Local-first: SQLite + drift",
+      desc: "Cache local, offline-first y sincronización con el backend.",
+      href: "#",
+      estado: "pendiente",
+    },
+    {
+      num: "09",
+      titulo: "HTTPS, Tailscale y cert pinning",
+      desc: "TLS real hacia el iPhone vía tailscale serve — y aquí sí, pinning SPKI en el Dio.",
+      href: "#",
+      estado: "pendiente",
+    },
+    {
+      num: "10",
+      titulo: "El dominio del ERP",
+      desc: "Clientes, almacenes, series, formas de pago y transacciones: modelado en Flutter y en el API Go.",
+      href: "#",
+      estado: "pendiente",
+    },
+    {
+      num: "11",
+      titulo: "Dashboard y la operación completa",
+      desc: "Dashboard de carga (clientes, existencias, ventas) y el flujo final: venta → factura o remisión → comprobante.",
+      href: "#",
+      estado: "pendiente",
+    },
+  ];
+
+  // ---- render ------------------------------------------------------
+  const ETIQUETAS = {
+    "pendiente": "pendiente",
+    "en-curso": "en curso ⚡",
+    "completado": "completado ✓",
+  };
+
+  const lista = document.getElementById("lista-cursos");
+
+  if (CURSOS.length === 0) {
+    lista.innerHTML = '<li class="vacio">// aún no hay cursos — la primera consulta crea el Curso 01</li>';
+  } else {
+    lista.innerHTML = CURSOS.map((c, i) => {
+      // sin página todavía → tarjeta sin link
+      const conPagina = c.href && c.href !== "#";
+      const tag = conPagina ? `a class="nodo-card" href="${c.href}"` : `div class="nodo-card" style="opacity:0.75"`;
+      const cierre = conPagina ? "a" : "div";
+      return `
+      <li class="nodo" style="animation-delay:${60 * i}ms">
+        <${tag}>
+          <span class="nodo-top">
+            <span class="nodo-num">Curso(${c.num})</span>
+            <span class="nodo-titulo">${c.titulo}</span>
+            <span class="estado estado-${c.estado}">${ETIQUETAS[c.estado]}</span>
+          </span>
+          <p class="nodo-desc">${c.desc}</p>
+        </${cierre}>
+      </li>`;
+    }).join("");
+  }
+</script>
+
+</body>
+</html>

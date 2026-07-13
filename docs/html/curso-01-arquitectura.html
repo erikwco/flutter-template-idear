@@ -1,0 +1,1013 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="darkreader-lock">
+<title>Curso 01 · La arquitectura del template — Escuela Flutter</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@500;700;800&family=Instrument+Sans:ital,wght@0,400;0,600;1,400&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/base.css">
+<style>
+  /* ---- estilos exclusivos de este curso ---- */
+
+  /* veredicto */
+  .veredicto {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1rem;
+    margin: 1.5rem 0;
+  }
+  @media (max-width: 46rem) { .veredicto { grid-template-columns: 1fr; } }
+
+  .veredicto-item {
+    background: var(--card);
+    border: 1px solid var(--linea);
+    border-radius: var(--radio);
+    padding: 1rem 1.2rem;
+  }
+  .veredicto-num {
+    font-family: var(--f-display);
+    font-size: 2rem;
+    font-weight: 800;
+    line-height: 1;
+  }
+  .veredicto-item p { margin: 0.4rem 0 0; font-size: 0.9rem; color: var(--ink-suave); }
+
+  /* tarjetas de capa */
+  .capas { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin: 1.5rem 0; }
+  @media (max-width: 46rem) { .capas { grid-template-columns: 1fr; } }
+
+  .capa-card {
+    background: var(--card);
+    border: 1px solid var(--linea);
+    border-top: 4px solid var(--capa-color, var(--azul));
+    border-radius: var(--radio);
+    padding: 1.1rem 1.3rem;
+  }
+  .capa-card h3 { margin: 0 0 0.4rem; font-family: var(--f-mono); font-size: 1rem; }
+  .capa-card p { font-size: 0.92rem; margin: 0.4rem 0; }
+  .capa-card ul { font-size: 0.88rem; padding-left: 1.1rem; margin: 0.5rem 0 0; }
+  .capa-si { color: var(--verde); }
+  .capa-no { color: #c0392b; }
+
+  /* diagrama interactivo */
+  .lienzo {
+    background: var(--card);
+    border: 1px solid var(--linea);
+    border-radius: var(--radio);
+    padding: 1rem;
+    overflow-x: auto;
+  }
+  .lienzo svg { display: block; min-width: 900px; width: 100%; height: auto; }
+
+  .leyenda {
+    display: flex; flex-wrap: wrap; gap: 1.2rem;
+    font-family: var(--f-mono); font-size: 0.72rem; color: var(--ink-suave);
+    margin: 0.9rem 0 0;
+  }
+  .leyenda span { display: inline-flex; align-items: center; gap: 0.4rem; }
+  .muestra { display: inline-block; width: 26px; height: 0; border-top: 2.5px solid var(--azul); }
+  .muestra.gris  { border-top-color: #8aa3bd; }
+  .muestra.rojo  { border-top-color: #d64541; border-top-style: dashed; }
+  .muestra.punteada { border-top-style: dotted; border-top-color: #8aa3bd; }
+  .muestra.rayada { border-top-style: dashed; }
+
+  .panel-info {
+    border: 1px solid var(--cielo);
+    border-left: 4px solid var(--azul);
+    background: var(--card);
+    border-radius: 0 var(--radio) var(--radio) 0;
+    padding: 1rem 1.25rem;
+    margin-top: 1rem;
+    min-height: 5.5rem;
+  }
+  .panel-info h4 { font-family: var(--f-mono); margin: 0 0 0.3rem; font-size: 0.95rem; }
+  .panel-info .pill { margin-left: 0.5rem; }
+  .panel-info p { margin: 0.4rem 0 0; font-size: 0.92rem; color: var(--texto-prosa); }
+
+  /* nodos SVG */
+  .nodo-svg { cursor: pointer; }
+  .nodo-svg rect {
+    fill: var(--paper);
+    stroke: var(--linea);
+    stroke-width: 1.5;
+    transition: stroke 0.15s ease, fill 0.15s ease;
+  }
+  .nodo-svg text { font-family: var(--f-mono); font-size: 12.5px; fill: var(--ink); }
+  .nodo-svg .sub { font-size: 10px; fill: var(--ink-suave); }
+  .nodo-svg:hover rect, .nodo-svg:focus-visible rect { stroke: var(--azul); stroke-width: 2; }
+  .nodo-svg.activo rect { stroke: var(--azul); stroke-width: 2.5; fill: var(--resalte); }
+  .apagado { opacity: 0.14; }
+  .col-titulo { font-family: var(--f-mono); font-size: 11px; letter-spacing: 0.1em; fill: var(--ink-suave); }
+  .banda-domain rect { fill: var(--resalte); stroke: var(--cielo); }
+
+  /* flujo de seguridad */
+  .flujo { list-style: none; margin: 1.5rem 0; padding: 0; }
+  .flujo li {
+    position: relative;
+    padding: 0 0 1.6rem 3.2rem;
+    opacity: 0;
+    transform: translateY(10px);
+    transition: opacity 0.45s ease, transform 0.45s ease;
+  }
+  .flujo li.visible { opacity: 1; transform: none; }
+  .flujo li::before {
+    content: attr(data-paso);
+    position: absolute; left: 0; top: 0;
+    width: 2.1rem; height: 2.1rem;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-family: var(--f-mono); font-size: 0.8rem; font-weight: 600;
+    background: var(--resalte); color: var(--azul);
+    border: 1.5px solid var(--cielo);
+  }
+  .flujo li::after {
+    content: "";
+    position: absolute; left: 1rem; top: 2.3rem; bottom: 0.2rem;
+    border-left: 2px solid var(--linea);
+  }
+  .flujo li:last-child::after { display: none; }
+  .flujo h4 { margin: 0.25rem 0 0.25rem; font-size: 1rem; font-family: var(--f-cuerpo); }
+  .flujo p { margin: 0; font-size: 0.92rem; color: var(--texto-prosa); }
+  .chip { font-family: var(--f-mono); font-size: 0.68rem; border-radius: 999px; padding: 0.12rem 0.6rem; vertical-align: 2px; margin-left: 0.5rem; }
+  .chip-ok { background: #e2f3ea; color: var(--verde); }
+  .chip-pend { background: #fdf3e2; color: var(--ambar); }
+  @media (prefers-color-scheme: dark) {
+    .chip-ok { background: #11331f; }
+    .chip-pend { background: #3a2c10; }
+  }
+
+  /* hallazgos */
+  .hallazgo { display: flex; gap: 0.8rem; align-items: baseline; background: var(--card); border: 1px solid var(--linea); border-radius: var(--radio); padding: 0.8rem 1.1rem; margin: 0.6rem 0; font-size: 0.94rem; }
+  .hallazgo .icono { font-family: var(--f-mono); flex-shrink: 0; }
+  .hallazgo.bien .icono { color: var(--verde); }
+  .hallazgo.ajustar .icono { color: var(--ambar); }
+  .hallazgo p { margin: 0; color: var(--texto-prosa); }
+
+  /* ejercicios */
+  .ejercicio {
+    border: 1px dashed var(--ambar);
+    border-radius: var(--radio);
+    background: var(--card);
+    padding: 1rem 1.25rem;
+    margin: 1rem 0;
+  }
+  .ejercicio h4 { margin: 0 0 0.4rem; font-family: var(--f-mono); font-size: 0.9rem; color: var(--ambar); }
+  .ejercicio p { margin: 0.3rem 0; font-size: 0.93rem; }
+
+  /* hoja de ruta: etapas con checkbox persistente */
+  #progreso-etapas {
+    font-family: var(--f-mono);
+    font-size: 0.85rem;
+    color: var(--verde);
+    margin: 0.75rem 0 1.25rem;
+  }
+  .etapa {
+    border: 1px solid var(--linea);
+    border-radius: var(--radio);
+    background: var(--card);
+    padding: 1.1rem 1.3rem;
+    margin: 1rem 0;
+    transition: border-color 0.2s ease, opacity 0.2s ease;
+  }
+  .etapa:has(input:checked) { border-color: var(--verde); opacity: 0.72; }
+  .etapa-cabecera { display: flex; align-items: center; gap: 0.7rem; flex-wrap: wrap; }
+  .etapa-cabecera input {
+    width: 1.15rem; height: 1.15rem;
+    accent-color: var(--verde);
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+  .etapa h4 { margin: 0; font-family: var(--f-mono); font-size: 0.92rem; }
+  .tag-ej {
+    font-family: var(--f-mono); font-size: 0.68rem;
+    background: #fdf3e2; color: var(--ambar);
+    border-radius: 999px; padding: 0.12rem 0.6rem;
+    margin-left: auto; white-space: nowrap;
+  }
+  @media (prefers-color-scheme: dark) { .tag-ej { background: #3a2c10; } }
+  .etapa p { font-size: 0.93rem; margin: 0.6rem 0; }
+  .etapa ul { font-size: 0.9rem; margin: 0.4rem 0; padding-left: 1.2rem; }
+</style>
+</head>
+<body>
+
+<header class="curso-header">
+  <div class="contenedor">
+    <a class="volver" href="index.html">← índice</a>
+    <p class="eyebrow">Curso 01 · fundamentos</p>
+    <h1 class="titulo-display">La arquitectura del template</h1>
+    <p class="lead">Veredicto sobre la estructura actual, qué vive en cada capa, el diagrama
+    completo de llamados e inyecciones, y el flujo de seguridad de punta a punta.</p>
+  </div>
+</header>
+
+<main class="prose">
+  <div class="contenedor">
+
+    <h2>El veredicto, primero</h2>
+    <p>
+      La estructura <strong>está correcta</strong>. Las capas existen, apuntan en la
+      dirección correcta y las decisiones importantes (un solo <code>Dio</code>, tokens en
+      Keychain, guard reactivo en el router) son las que tomaría un equipo senior.
+      El detalle:
+    </p>
+
+    <div class="veredicto">
+      <div class="veredicto-item">
+        <span class="veredicto-num" style="color: var(--verde)">7</span>
+        <p>decisiones production-grade ya tomadas y bien tomadas</p>
+      </div>
+      <div class="veredicto-item">
+        <span class="veredicto-num" style="color: var(--ambar)">5</span>
+        <p>ajustes menores — 3 son ejercicios tuyos al final</p>
+      </div>
+      <div class="veredicto-item">
+        <span class="veredicto-num" style="color: var(--azul)">1</span>
+        <p>decisión estructural tomada: <strong>feature-first</strong> — ver <a href="#hoja-de-ruta">la hoja de ruta</a></p>
+      </div>
+    </div>
+
+    <h2>Las cuatro capas y su única regla</h2>
+    <p>
+      Todo el orden del proyecto se sostiene en una sola regla, la
+      <strong>regla de dependencia</strong>: las flechas de import solo apuntan en una
+      dirección — <code>ui → state → data → domain</code> — y <code>domain</code> no
+      apunta a nadie. Viniendo de React: es la misma disciplina de "los componentes no
+      hacen fetch, llaman hooks; los hooks llaman servicios", pero con nombre y apellido.
+    </p>
+
+    <div class="capas">
+      <div class="capa-card" style="--capa-color: #9b59b6;">
+        <h3>domain/ — el vocabulario</h3>
+        <p>Entidades y tipos puros: <code>Product</code>, <code>User</code>, <code>Token</code>, <code>AuthState</code>. Es el idioma que hablan las demás capas.</p>
+        <ul>
+          <li class="capa-si">✓ clases inmutables, enums, copyWith</li>
+          <li class="capa-si">✓ lógica propia del negocio (ej. <code>felCode</code>, <code>priceLabel</code>)</li>
+          <li class="capa-no">✗ imports de dio, riverpod, flutter — de nada</li>
+        </ul>
+        <p style="margin-top:0.6rem"><em>Test rápido: ¿compilaría en un script de Dart puro sin Flutter? Debe ser sí.</em></p>
+      </div>
+      <div class="capa-card" style="--capa-color: #2980b9;">
+        <h3>data/ — cómo se obtienen los datos</h3>
+        <p>Habla con el mundo exterior (HTTP, Keychain, mañana SQLite) y devuelve tipos de <code>domain</code>.</p>
+        <ul>
+          <li class="capa-si">✓ APIs (<code>AuthApi</code>, <code>ProductApi</code>): HTTP puro, sin estado</li>
+          <li class="capa-si">✓ Repositorios (<code>AuthRepository</code>): combinan fuentes (API + storage)</li>
+          <li class="capa-si">✓ Storage (<code>SecureStore</code>)</li>
+          <li class="capa-no">✗ saber de widgets, de navegación o de estado de UI</li>
+        </ul>
+      </div>
+      <div class="capa-card" style="--capa-color: #16a085;">
+        <h3>state/ — la orquestación</h3>
+        <p>Estado vivo de la app y las operaciones que lo mutan. Traduce eventos de UI en llamadas a <code>data</code> y publica el resultado.</p>
+        <ul>
+          <li class="capa-si">✓ Notifiers (<code>AuthController</code>, <code>ProductListNotifier</code>)</li>
+          <li class="capa-si">✓ providers.dart: la raíz de composición (ver abajo)</li>
+          <li class="capa-no">✗ construir widgets, formatear para pantalla</li>
+        </ul>
+      </div>
+      <div class="capa-card" style="--capa-color: #e67e22;">
+        <h3>ui/ — pintar y delegar</h3>
+        <p>Widgets que hacen <code>watch</code> del estado y llaman métodos del notifier. Nada más.</p>
+        <ul>
+          <li class="capa-si">✓ pantallas, cards, skeletons, animaciones</li>
+          <li class="capa-si">✓ estado efímero de widget (un controller de texto, un flag de loading local)</li>
+          <li class="capa-no">✗ tocar <code>data/</code> directamente — <strong>regla de oro</strong></li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="insight">
+      <strong>★ Insight.</strong> La recompensa de esta regla no es elegancia: es que cada
+      capa se puede <em>reemplazar sin tocar las demás</em>. Cuando llegue drift (curso 08),
+      solo <code>data/</code> cambia. Cuando rediseñemos la UI (curso 05), solo
+      <code>ui/</code> cambia. Ese es el contrato que convierte esto en un template.
+    </div>
+
+    <h2>El diagrama: cadena de llamados e inyecciones</h2>
+    <p>
+      Este es el mapa real del proyecto, archivo por archivo. <strong>Haz click en
+      cualquier nodo</strong> para iluminar su cadena completa de dependencias
+      (hacia arriba: quién lo usa; hacia abajo: qué usa) y leer su rol.
+      Hay una flecha roja: es el cruce de capas que vas a corregir en el ejercicio 1.
+    </p>
+
+    <div class="lienzo">
+      <svg id="diagrama" viewBox="0 0 980 620" role="img" aria-label="Diagrama de dependencias del proyecto"></svg>
+      <div class="leyenda">
+        <span><span class="muestra"></span> watch / read / listen (Riverpod)</span>
+        <span><span class="muestra gris"></span> inyección por constructor</span>
+        <span><span class="muestra rayada"></span> HTTP</span>
+        <span><span class="muestra punteada"></span> I/O del sistema</span>
+        <span><span class="muestra rojo"></span> cruce de capas ⚠</span>
+      </div>
+    </div>
+    <div class="panel-info" id="panel-info">
+      <h4>Explora el diagrama</h4>
+      <p>Click en un nodo → su cadena de dependencias se ilumina y aquí aparece su rol,
+      su archivo y por qué vive en esa capa. Click en el fondo para reiniciar.</p>
+    </div>
+
+    <h2>providers.dart: la raíz de composición</h2>
+    <p>
+      Tu intuición fue correcta: hay <strong>un solo <code>Dio</code></strong> con la URL
+      base y el interceptor, y de ahí se inyecta en <code>AuthApi</code> y
+      <code>ProductApi</code>. A ese archivo donde se arma todo el grafo de objetos se le
+      llama <strong>raíz de composición</strong> (composition root): es el único lugar del
+      proyecto que sabe cómo se conecta todo. En React es el equivalente a ese archivo
+      donde componés los providers de contexto + el cliente de fetch configurado.
+    </p>
+
+    <span class="archivo">lib/state/providers.dart (anotado)</span>
+<pre><code>// 1. La pieza compartida se crea UNA vez…
+final dioProvider = Provider&lt;Dio&gt;((ref) {
+  final store = ref.watch(secureStoreProvider);   // ← dependencia declarada
+  final dio = Dio(BaseOptions(baseUrl: kBaseUrl, ...));
+  dio.interceptors.add(/* Bearer + (pendiente) refresh */);
+  return dio;
+});
+
+// 2. …y quien la necesita la PIDE, no la construye:
+final authClientProvider = Provider&lt;AuthApi&gt;(
+  (ref) =&gt; AuthApi(ref.watch(dioProvider)),        // inyección
+);
+final productApiProvider = Provider&lt;ProductApi&gt;(
+  (ref) =&gt; ProductApi(ref.watch(dioProvider)),     // misma instancia de Dio
+);
+
+// 3. El repositorio combina dos fuentes — también pedidas:
+final authRepositoryProvider = Provider&lt;AuthRepository&gt;(
+  (ref) =&gt; AuthRepository(
+    api: ref.watch(authClientProvider),
+    store: ref.watch(secureStoreProvider),
+  ),
+);</code></pre>
+
+    <div class="insight">
+      <strong>★ Insight.</strong> Fíjate que <code>AuthApi</code> recibe <code>Dio</code>
+      por constructor y no llama a Riverpod por dentro. Eso significa que la clase se puede
+      testear pasándole un Dio falso, sin levantar ningún provider. La regla:
+      <em>las clases de <code>data/</code> no saben que Riverpod existe; solo la raíz de
+      composición las conecta.</em> Por eso los providers "de data" pueden vivir en
+      <code>state/providers.dart</code> sin romper capas: la <strong>declaración</strong>
+      del cableado es orquestación, aunque los <strong>objetos</strong> cableados sean de data.
+    </div>
+
+    <h2>El flujo de seguridad, de punta a punta</h2>
+    <p>
+      Este es el viaje del token con lo que existe <em>hoy</em>, incluyendo lo que ya
+      verifiqué en tu API Go (<code>tokens.go</code>, <code>main.go</code>). Los chips
+      marcan qué está resuelto y qué queda pendiente — los pendientes son exactamente el
+      temario del Curso 03.
+    </p>
+
+    <ol class="flujo" id="flujo-seguridad">
+      <li data-paso="1">
+        <h4>Credenciales viajan al servidor <span class="chip chip-ok">OK</span></h4>
+        <p><code>LoginScreen → AuthController.login() → AuthRepository → AuthApi → POST /auth/login</code>.
+        La pantalla nunca ve un token; solo conoce al controller. Hoy viaja por HTTP local;
+        TLS real vía Tailscale llega en el curso 09.</p>
+      </li>
+      <li data-paso="2">
+        <h4>Go firma un par de tokens <span class="chip chip-ok">OK</span></h4>
+        <p>HS256 con claims propios: <code>access</code> (15 min) y <code>refresh</code> (7 días),
+        distinguidos por el claim <code>typ</code> — un refresh no sirve como access ni al revés.
+        Cada token lleva <code>jti</code> único (la puerta a revocación futura) y el parser
+        rechaza cualquier algoritmo que no sea HMAC (corta el ataque <code>alg=none</code>).</p>
+      </li>
+      <li data-paso="3">
+        <h4>El par se guarda cifrado en el dispositivo <span class="chip chip-ok">OK</span></h4>
+        <p><code>AuthRepository.login()</code> → <code>SecureStore.saveTokens()</code> →
+        Keychain (iOS) / Keystore (Android). Nunca SharedPreferences, nunca memoria plana.</p>
+      </li>
+      <li data-paso="4">
+        <h4>El guard del router libera la navegación <span class="chip chip-ok">OK</span></h4>
+        <p><code>AuthState</code> pasa a <code>authenticated</code> → el <code>redirect</code> de
+        GoRouter (conectado vía <code>refreshListenable</code>) reevalúa <em>toda</em> navegación.
+        Tres estados: <code>unknown</code> (restaurando sesión), <code>unauthenticated</code>
+        (→ /login), <code>authenticated</code> (→ app). Navegación directa sin sesión: imposible.</p>
+      </li>
+      <li data-paso="5">
+        <h4>Cada request lleva el Bearer automáticamente <span class="chip chip-ok">OK</span></h4>
+        <p>El interceptor <code>onRequest</code> del Dio único lee el access de SecureStore y
+        agrega <code>Authorization: Bearer …</code>. Ninguna pantalla ni API lo hace a mano —
+        heredan la seguridad por usar el mismo Dio.</p>
+      </li>
+      <li data-paso="6">
+        <h4>El middleware Go valida y contextualiza <span class="chip chip-ok">OK</span></h4>
+        <p><code>authMiddleware</code> verifica firma + expiración + <code>typ == "access"</code>
+        y mete el user id en el contexto del request. Los handlers nunca re-parsean tokens.</p>
+      </li>
+      <li data-paso="7">
+        <h4>Access vencido → refresh silencioso <span class="chip chip-pend">PENDIENTE · curso 03</span></h4>
+        <p>El <code>onError</code> del interceptor tiene el TODO: ante un 401, pedir
+        <code>POST /auth/refresh</code> con un Dio "pelado" (sin interceptor, para no entrar en
+        loop), guardar el par nuevo y reintentar la request original. El server ya lo soporta y
+        <code>AuthApi.refresh()</code> ya existe — falta solo el eslabón del interceptor.
+        Hoy: a los 15 minutos la sesión "muere" en silencio.</p>
+      </li>
+      <li data-paso="8">
+        <h4>Restaurar sesión al abrir la app <span class="chip chip-pend">PENDIENTE · curso 03</span></h4>
+        <p><code>restore()</code> valida la sesión con <code>GET /auth/me</code> usando el access.
+        Si el access venció (y vence cada 15 min), te desloguea <em>aunque el refresh siga vivo
+        7 días</em>. Con el paso 7 resuelto, este se arregla casi solo.</p>
+      </li>
+      <li data-paso="9">
+        <h4>Logout <span class="chip chip-ok">OK (local)</span></h4>
+        <p><code>SecureStore.clear()</code> borra el par del dispositivo. Revocación del lado del
+        servidor (lista de <code>jti</code> revocados) es opcional y quedaría para Seguridad II
+        si el ERP lo amerita.</p>
+      </li>
+      <li data-paso="10">
+        <h4>Cert pinning <span class="chip chip-pend">EN EVALUACIÓN · curso 09</span></h4>
+        <p>Mi evaluación: pinnear hoy no aporta — no hay TLS que pinnear en localhost, y dentro
+        de la tailnet el tráfico ya viaja cifrado por WireGuard. El momento correcto es el curso
+        09, cuando expongamos el API con <code>tailscale serve</code> (certificados reales de
+        Let's Encrypt) y el iPhone consuma HTTPS: ahí pinneamos <strong>SPKI</strong> (la clave
+        pública, no el certificado, que rota cada ~90 días) con backup pin. El
+        <code>TODO(cert-pinning)</code> ya está marcado en el lugar exacto: <code>dioProvider</code>.</p>
+      </li>
+    </ol>
+
+    <h2>Hallazgos: lo que está bien y lo que se ajusta</h2>
+
+    <h3>Bien resuelto (no lo toques)</h3>
+    <div class="hallazgo bien"><span class="icono">✓</span><p>Un solo <code>Dio</code> compartido, creado una vez, con el interceptor heredado por todas las APIs.</p></div>
+    <div class="hallazgo bien"><span class="icono">✓</span><p>Guard reactivo: <code>refreshListenable</code> + estado <code>unknown</code> para no parpadear al login mientras se restaura sesión.</p></div>
+    <div class="hallazgo bien"><span class="icono">✓</span><p><code>AsyncNotifier</code> con <code>AsyncValue.guard</code>: loading/data/error idiomáticos, sin try/catch artesanal en la UI.</p></div>
+    <div class="hallazgo bien"><span class="icono">✓</span><p>Tokens en Keychain/Keystore vía <code>SecureStore</code> — y las pantallas jamás los ven.</p></div>
+    <div class="hallazgo bien"><span class="icono">✓</span><p>Server: par access/refresh con <code>typ</code>, <code>jti</code>, TTLs sensatos y rechazo de <code>alg=none</code>.</p></div>
+    <div class="hallazgo bien"><span class="icono">✓</span><p><code>domain</code> puro: <code>Product</code> con lógica de negocio (<code>felCode</code>) y sin un solo import de infraestructura.</p></div>
+    <div class="hallazgo bien"><span class="icono">✓</span><p>UI con estados completos: skeleton en loading, <code>ErrorView</code> con retry, pull-to-refresh.</p></div>
+
+    <h3>A ajustar (tres son tus ejercicios)</h3>
+    <div class="hallazgo ajustar"><span class="icono">⚠</span><p><strong>Cruce de capas:</strong> <code>ProductDetailScreen</code> define <code>_productProvider</code> dentro de <code>ui/</code> y llama directo a <code>productApiProvider</code> (data), saltándose <code>state/</code>. Es la flecha roja del diagrama. → <strong>Ejercicio 1</strong>.</p></div>
+    <div class="hallazgo ajustar"><span class="icono">⚠</span><p><strong>Naming inconsistente:</strong> <code>authClientProvider</code> vs <code>productApiProvider</code> — mismo rol, dos convenciones. → <strong>Ejercicio 2</strong>.</p></div>
+    <div class="hallazgo ajustar"><span class="icono">⚠</span><p><strong><code>kBaseUrl</code> hardcodeada:</strong> una const que cambia por entorno (simulador / Android / iPhone+Tailscale / producción) no debería requerir editar código. → <strong>Ejercicio 3</strong>.</p></div>
+    <div class="hallazgo ajustar"><span class="icono">⚠</span><p><strong>Credenciales demo precargadas</strong> en <code>LoginScreen</code> (<code>erik@gibbor.app / 1234</code>). Comodísimo en dev, prohibido en un build de release — lo resolveremos con flavors/entornos, mismo mecanismo del ejercicio 3.</p></div>
+    <div class="hallazgo ajustar"><span class="icono">⚠</span><p><strong>Detalle idiomático:</strong> <code>_productProvider</code> usa <code>ref.read(productApiProvider)</code> en el <em>cuerpo</em> del provider; ahí corresponde <code>ref.watch</code> — dentro del cuerpo se declaran dependencias, <code>read</code> es para callbacks. Profundizamos en el curso 02.</p></div>
+
+    <h2>La decisión: layer-first vs feature-first</h2>
+    <p>
+      Hoy el proyecto agrupa <strong>por capa</strong> (layer-first): toda la UI junta, todo
+      el estado junto. Con 3 features y 21 archivos funciona perfecto. Pero el destino de
+      este template es un ERP: clientes, almacenes, series, formas de pago, transacciones,
+      ventas… Con 8+ módulos, layer-first obliga a saltar entre 4 carpetas lejanas para
+      tocar una sola feature. La alternativa es agrupar <strong>por feature</strong> y
+      dejar lo transversal en <code>core/</code>:
+    </p>
+
+    <div class="comparacion">
+      <div>
+        <span class="archivo">hoy: layer-first</span>
+<pre><code>lib/
+├─ domain/    product.dart, auth.dart
+├─ data/      auth_api.dart, product_api.dart,
+│             auth_repository.dart, secure_store.dart
+├─ state/     providers.dart, auth_controller.dart,
+│             product_list_controller.dart, clock.dart
+├─ ui/        login_screen.dart, home_screen.dart,
+│             live_screen.dart, products/…
+├─ router.dart · theme.dart · main.dart</code></pre>
+      </div>
+      <div>
+        <span class="archivo">propuesta: feature-first</span>
+<pre><code>lib/
+├─ core/                 ← lo transversal
+│  ├─ network/           dio_provider.dart
+│  ├─ storage/           secure_store.dart
+│  ├─ router/            router.dart
+│  └─ theme/             theme.dart
+├─ features/
+│  ├─ auth/
+│  │  ├─ domain/ data/ state/ ui/
+│  ├─ products/
+│  │  ├─ domain/ data/ state/ ui/
+│  └─ live/
+└─ main.dart</code></pre>
+      </div>
+    </div>
+
+    <p>
+      Las capas y su regla de dependencia <strong>no cambian</strong> — solo cambia el
+      criterio de agrupación: cada feature contiene sus propias cuatro capas en miniatura.
+      Son 21 archivos (~1 hora de mover + arreglar imports); en el curso 10, con el dominio
+      ERP encima, sería un día entero y con más riesgo.
+    </p>
+
+    <div class="insight">
+      <strong>★ Decisión (2026-07-12): feature-first, ahora.</strong> "Ahora corregirlo no
+      duele tanto" aplicada a su primer caso real. La ejecución completa está en
+      <a href="#hoja-de-ruta">la hoja de ruta</a>, abajo.
+      Nota importante: al migrar, <code>providers.dart</code> <em>se disuelve</em> — cada
+      provider se declara junto a la clase que provee (patrón idiomático de Riverpod
+      moderno). La raíz de composición deja de ser un archivo y pasa a ser el grafo mismo.
+    </div>
+
+    <h2 id="hoja-de-ruta">La hoja de ruta (tú escribes, en este orden)</h2>
+    <p>
+      Los cuatro ejercicios se ejecutan como <strong>una sola migración por etapas</strong>:
+      los ejercicios 1, 2 y 3 suceden <em>dentro</em> de ella, en la etapa que les corresponde
+      (marcada con su etiqueta). Vamos de lo que no depende de nadie hacia lo que depende de
+      todos — así el proyecto está roto el menor tiempo posible y <code>flutter analyze</code>
+      siempre da una lista corta. Marca cada etapa al terminarla (el progreso se guarda en este
+      navegador) y reporta el avance en la sesión de Claude para revisión.
+    </p>
+    <p id="progreso-etapas"></p>
+
+    <div class="etapa">
+      <div class="etapa-cabecera">
+        <input type="checkbox" data-etapa="e0" id="e0" aria-label="Etapa 0 completada">
+        <h4><label for="e0">Etapa 0 · La rama</label></h4>
+      </div>
+<pre><code>git checkout -b feature-first</code></pre>
+      <p>Migración de estructura siempre en rama propia: si algo sale mal, se tira sin dolor.</p>
+    </div>
+
+    <div class="etapa">
+      <div class="etapa-cabecera">
+        <input type="checkbox" data-etapa="e1" id="e1" aria-label="Etapa 1 completada">
+        <h4><label for="e1">Etapa 1 · core/theme (calentamiento)</label></h4>
+      </div>
+<pre><code>mkdir -p lib/core/theme
+git mv lib/theme.dart lib/core/theme/theme.dart</code></pre>
+      <p><code>flutter analyze</code> señalará <code>main.dart</code>: cambia
+      <code>import 'theme.dart';</code> → <code>import 'core/theme/theme.dart';</code>.</p>
+    </div>
+
+    <div class="etapa">
+      <div class="etapa-cabecera">
+        <input type="checkbox" data-etapa="e2" id="e2" aria-label="Etapa 2 completada">
+        <h4><label for="e2">Etapa 2 · core/storage — el provider viaja con su clase</label></h4>
+      </div>
+<pre><code>mkdir -p lib/core/storage
+git mv lib/data/secure_store.dart lib/core/storage/secure_store.dart</code></pre>
+      <p>El archivo gana su provider (sale de <code>providers.dart</code>). Debe quedar así —
+      tecléalo, no lo pegues:</p>
+      <span class="archivo">lib/core/storage/secure_store.dart</span>
+<pre><code>import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+
+class SecureStore {
+  static const _s = FlutterSecureStorage();
+
+  Future&lt;void&gt; saveTokens(String access, String refresh) async {
+    await _s.write(key: 'access', value: access);
+    await _s.write(key: 'refresh', value: refresh);
+  }
+
+  Future&lt;String?&gt; readAccess() =&gt; _s.read(key: 'access');
+  Future&lt;String?&gt; readRefresh() =&gt; _s.read(key: 'refresh');
+  Future&lt;void&gt; clear() =&gt; _s.deleteAll();
+}
+
+final secureStoreProvider = Provider&lt;SecureStore&gt;((ref) =&gt; SecureStore());</code></pre>
+      <p>Luego: en <code>providers.dart</code> borra la declaración vieja de
+      <code>secureStoreProvider</code> e importa la nueva ruta; <code>flutter analyze</code> te
+      dirá quién más importaba la ruta vieja (<code>auth_repository.dart</code>).</p>
+    </div>
+
+    <div class="etapa">
+      <div class="etapa-cabecera">
+        <input type="checkbox" data-etapa="e3" id="e3" aria-label="Etapa 3 completada">
+        <h4><label for="e3">Etapa 3 · core/network/dio_provider.dart</label></h4>
+        <span class="tag-ej">contiene el Ejercicio 3</span>
+      </div>
+      <p>Archivo nuevo. Aquí muere la <code>kBaseUrl</code> hardcodeada (Ejercicio 3) y aquí
+      queda documentada la respuesta a la pregunta de predicción: <strong>jamás un import de
+      <code>features/</code></strong> — sería la flecha hacia atrás.</p>
+      <span class="archivo">lib/core/network/dio_provider.dart</span>
+<pre><code>import 'package:dio/dio.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:mini_flutter/core/storage/secure_store.dart';
+
+/// Ejercicio 3: la URL ya no vive en el código — llega por --dart-define.
+///   flutter run --dart-define=API_URL=http://10.0.2.2:9090        (Android emu)
+///   flutter run --dart-define=API_URL=https://mac.tailnet.ts.net  (iPhone/tailnet)
+/// Sin flag cae al default de desarrollo (iOS sim / macOS).
+const kBaseUrl = String.fromEnvironment(
+  'API_URL',
+  defaultValue: 'http://localhost:9090',
+);
+
+/// Dio compartido: baseUrl + interceptor Bearer, creado UNA vez.
+final dioProvider = Provider&lt;Dio&gt;((ref) {
+  final store = ref.watch(secureStoreProvider);
+  final dio = Dio(
+    BaseOptions(baseUrl: kBaseUrl, connectTimeout: const Duration(seconds: 10)),
+  );
+
+  dio.interceptors.add(
+    InterceptorsWrapper(
+      onRequest: (options, handler) async {
+        final t = await store.readAccess();
+        if (t != null) {
+          options.headers['Authorization'] = 'Bearer $t';
+        }
+        handler.next(options);
+      },
+      onError: (error, handler) async {
+        if (error.response?.statusCode == 401) {
+          // Curso 03: refresh con un Dio "pelado". NUNCA importando
+          // features/auth aquí — la flecha no apunta hacia atrás.
+        }
+        handler.next(error);
+      },
+    ),
+  );
+
+  // TODO(cert-pinning): al pasar a HTTPS real (curso 09), pinnear SPKI acá.
+  return dio;
+});</code></pre>
+      <p>Borra <code>kBaseUrl</code> y <code>dioProvider</code> de <code>providers.dart</code>
+      e importa la ruta nueva ahí mientras providers.dart siga existiendo.</p>
+    </div>
+
+    <div class="etapa">
+      <div class="etapa-cabecera">
+        <input type="checkbox" data-etapa="e4" id="e4" aria-label="Etapa 4 completada">
+        <h4><label for="e4">Etapa 4 · core/router</label></h4>
+      </div>
+<pre><code>mkdir -p lib/core/router
+git mv lib/router.dart lib/core/router/router.dart</code></pre>
+      <p>En <code>main.dart</code>: <code>import 'core/router/router.dart';</code>. Los imports de
+      pantallas dentro del router se irán actualizando conforme muevas features (etapas 5–7) —
+      recuerda: el router es la <strong>excepción documentada</strong>, el único archivo de
+      <code>core/</code> con permiso de importar features.</p>
+    </div>
+
+    <div class="etapa">
+      <div class="etapa-cabecera">
+        <input type="checkbox" data-etapa="e5" id="e5" aria-label="Etapa 5 completada">
+        <h4><label for="e5">Etapa 5 · features/auth</label></h4>
+        <span class="tag-ej">contiene el Ejercicio 2</span>
+      </div>
+<pre><code>mkdir -p lib/features/auth/{domain,data,state,ui}
+git mv lib/domain/auth.dart            lib/features/auth/domain/auth.dart
+git mv lib/data/auth_api.dart          lib/features/auth/data/auth_api.dart
+git mv lib/data/auth_repository.dart   lib/features/auth/data/auth_repository.dart
+git mv lib/state/auth_controller.dart  lib/features/auth/state/auth_controller.dart
+git mv lib/ui/login_screen.dart        lib/features/auth/ui/login_screen.dart</code></pre>
+      <p>Cada provider viaja al archivo de su clase. Al final de <code>auth_api.dart</code>
+      (con sus imports de riverpod y <code>core/network/dio_provider.dart</code>):</p>
+<pre><code>/// Ejercicio 2: antes authClientProvider — convención unificada:
+/// xxxApiProvider / xxxRepositoryProvider / xxxControllerProvider.
+final authApiProvider = Provider&lt;AuthApi&gt;(
+  (ref) =&gt; AuthApi(ref.watch(dioProvider)),
+);</code></pre>
+      <p>Y al final de <code>auth_repository.dart</code>:</p>
+<pre><code>final authRepositoryProvider = Provider&lt;AuthRepository&gt;(
+  (ref) =&gt; AuthRepository(
+    api: ref.watch(authApiProvider),
+    store: ref.watch(secureStoreProvider),
+  ),
+);</code></pre>
+      <p><code>flutter analyze</code> te llevará a actualizar imports en:
+      <code>auth_controller.dart</code> (ya no importa providers.dart, importa
+      <code>auth_repository.dart</code>), <code>login_screen.dart</code>, y el router
+      (ruta nueva de <code>auth.dart</code> y <code>login_screen.dart</code>).</p>
+    </div>
+
+    <div class="etapa">
+      <div class="etapa-cabecera">
+        <input type="checkbox" data-etapa="e6" id="e6" aria-label="Etapa 6 completada">
+        <h4><label for="e6">Etapa 6 · features/products</label></h4>
+        <span class="tag-ej">contiene el Ejercicio 1</span>
+      </div>
+<pre><code>mkdir -p lib/features/products/{domain,data,state,ui}
+git mv lib/domain/product.dart                  lib/features/products/domain/product.dart
+git mv lib/data/product_api.dart                lib/features/products/data/product_api.dart
+git mv lib/state/product_list_controller.dart   lib/features/products/state/product_list_controller.dart
+git mv lib/ui/products/product_list_screen.dart lib/features/products/ui/product_list_screen.dart
+git mv lib/ui/products/product_detail_screen.dart lib/features/products/ui/product_detail_screen.dart
+git mv lib/ui/products/product_card.dart        lib/features/products/ui/product_card.dart
+git mv lib/ui/products/product_skeleton.dart    lib/features/products/ui/product_skeleton.dart
+git mv lib/ui/products/error_view.dart          lib/features/products/ui/error_view.dart</code></pre>
+      <p>Al final de <code>product_api.dart</code>, su provider:</p>
+<pre><code>final productApiProvider = Provider&lt;ProductApi&gt;(
+  (ref) =&gt; ProductApi(ref.watch(dioProvider)),
+);</code></pre>
+      <p><strong>Ejercicio 1 — deshacer el cruce de capas.</strong> Archivo nuevo, y nace
+      directamente en su casa definitiva:</p>
+      <span class="archivo">lib/features/products/state/product_detail_controller.dart</span>
+<pre><code>import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:mini_flutter/features/products/data/product_api.dart';
+import 'package:mini_flutter/features/products/domain/product.dart';
+
+/// Un producto por id. `.family` parametriza el provider con el id.
+/// En el CUERPO de un provider se declaran dependencias → ref.watch
+/// (ref.read aquí era el detalle idiomático señalado en los hallazgos).
+final productProvider = FutureProvider.family&lt;Product, String&gt;((ref, id) {
+  return ref.watch(productApiProvider).get(id);
+});</code></pre>
+      <p>En <code>product_detail_screen.dart</code>: borra el bloque
+      <code>final _productProvider = …</code> del final, quita el import de providers.dart,
+      importa el controller nuevo y usa <code>ref.watch(productProvider(id))</code>.
+      <em>Verificación de la regla de oro: ningún archivo de <code>ui/</code> importa
+      <code>data/</code>.</em></p>
+    </div>
+
+    <div class="etapa">
+      <div class="etapa-cabecera">
+        <input type="checkbox" data-etapa="e7" id="e7" aria-label="Etapa 7 completada">
+        <h4><label for="e7">Etapa 7 · features/live y features/home</label></h4>
+      </div>
+<pre><code>mkdir -p lib/features/live/{state,ui} lib/features/home/ui
+git mv lib/state/clock.dart      lib/features/live/state/clock.dart
+git mv lib/ui/live_screen.dart   lib/features/live/ui/live_screen.dart
+git mv lib/ui/home_screen.dart   lib/features/home/ui/home_screen.dart</code></pre>
+      <p>Imports del router y de <code>live_screen.dart</code> otra vez vía
+      <code>flutter analyze</code>. (<code>home</code> será reconstruido como shell de
+      navegación en el curso 04 — por eso su feature nace mínima.)</p>
+    </div>
+
+    <div class="etapa">
+      <div class="etapa-cabecera">
+        <input type="checkbox" data-etapa="e8" id="e8" aria-label="Etapa 8 completada">
+        <h4><label for="e8">Etapa 8 · Demoler providers.dart + verificación final</label></h4>
+      </div>
+      <p>A esta altura <code>lib/state/providers.dart</code> debe estar vacío (todo viajó a su
+      archivo). Bórralo: <code>git rm lib/state/providers.dart</code> — y las carpetas viejas
+      que queden vacías. Luego, la verificación production-grade (la migración no está "lista",
+      está <em>verificada</em>):</p>
+<pre><code>flutter analyze                                  # → 0 issues
+grep -rn "import.*data/" lib/features/*/ui/      # → vacío (regla de oro)
+grep -rn "features/" lib/core/                   # → solo router.dart
+flutter test                                     # → verde</code></pre>
+      <ul>
+        <li>Correr la app: login → productos → detalle (Hero) → back → logout → guard te regresa a /login. Todo igual que antes.</li>
+        <li>Bonus del Ejercicio 3: correr una vez con <code>--dart-define=API_URL=…</code> y confirmar que pega a esa URL.</li>
+      </ul>
+      <p><em>Con esto, commit en la rama y reporte en la sesión: se revisa la estructura
+      resultante y el Curso 01 se marca completado.</em></p>
+    </div>
+
+    <div class="insight">
+      <strong>★ Insight.</strong> Nota qué <em>no</em> es ejercicio: el refresh del
+      interceptor. Ese es el corazón del curso 03 y merece entenderse completo (por qué un Dio
+      "pelado", cómo evitar el loop de 401, qué pasa con requests concurrentes durante el
+      refresh) antes de escribirlo. Resistir el "lo arreglo rápido" también es production-grade.
+    </div>
+
+  </div>
+</main>
+
+<footer class="paginacion">
+  <div class="contenedor" style="display:flex; justify-content:space-between; gap:1rem;">
+    <a href="curso-00-como-funciona.html">← Curso 00</a>
+    <a href="index.html">índice</a>
+    <span style="color: var(--ink-suave)">siguiente: Riverpod a fondo</span>
+  </div>
+</footer>
+
+<script>
+// ═══════════════════════════════════════════════════════════════
+// Diagrama interactivo de dependencias
+// ═══════════════════════════════════════════════════════════════
+(function () {
+  const NS = 'http://www.w3.org/2000/svg';
+  const W = 190, H = 46;
+  const COL_X = { ui: 20, state: 270, data: 530, ext: 790 };
+  const COL_TITULOS = [
+    { x: 20,  t: 'UI · pintar y delegar' },
+    { x: 270, t: 'STATE · orquestar' },
+    { x: 530, t: 'DATA · obtener/persistir' },
+    { x: 790, t: 'EXTERIOR' },
+  ];
+
+  const NODOS = [
+    { id: 'login',   col: 'ui', y: 40,  nombre: 'LoginScreen',         sub: 'login_screen.dart',
+      desc: 'Formulario (forui). Solo conoce al AuthController: llama login() y muestra el error. Jamás ve un token ni sabe que Dio existe. El estado del form (controllers, _loading) es efímero de widget: correcto que viva aquí y no en Riverpod.' },
+    { id: 'home',    col: 'ui', y: 120, nombre: 'HomeScreen',          sub: 'home_screen.dart',
+      desc: 'watch de authControllerProvider para mostrar el usuario; logout vía .notifier. Hoy tiene los "botones hechizos" — en el curso 04 se convierte en un shell de navegación real.' },
+    { id: 'live',    col: 'ui', y: 200, nombre: 'LiveScreen',          sub: 'live_screen.dart',
+      desc: 'watch de clockProvider: recibe AsyncValue<DateTime> y pinta con .when(). Primer contacto con streams — el caso de uso fuerte llega en el curso 07.' },
+    { id: 'plist',   col: 'ui', y: 280, nombre: 'ProductListScreen',   sub: 'product_list_screen.dart',
+      desc: 'watch de productListProvider → skeleton / ErrorView con retry / lista con pull-to-refresh. Buen ejemplo de UI con los tres estados async resueltos.' },
+    { id: 'pdetail', col: 'ui', y: 385, nombre: 'ProductDetailScreen', sub: 'product_detail_screen.dart ⚠',
+      desc: '⚠ Aquí está el cruce: define _productProvider DENTRO del archivo de UI y ese provider llama directo a productApiProvider (capa data), saltándose state/. Funciona, pero rompe la regla de oro: es tu Ejercicio 1. Además usa ref.read donde corresponde ref.watch.' },
+
+    { id: 'router',  col: 'state', y: 40,  nombre: 'goRouterProvider',    sub: 'router.dart',
+      desc: 'El guard: redirect que corre en CADA navegación y ante cada cambio de auth (refreshListenable ← puente ValueNotifier desde Riverpod). unknown → espera; unauthenticated → /login; authenticated → app. Navegación directa sin sesión: imposible.' },
+    { id: 'auth',    col: 'state', y: 130, nombre: 'authController',      sub: 'auth_controller.dart · Notifier<AuthState>',
+      desc: 'Único dueño del estado de sesión. build() dispara _restore() (fire-and-forget) y arranca en unknown. login/logout delegan al repositorio y publican el nuevo estado; router y pantallas reaccionan solos.' },
+    { id: 'clock',   col: 'state', y: 220, nombre: 'clockProvider',       sub: 'clock.dart · StreamProvider',
+      desc: 'Generador async* que emite DateTime cada segundo. Demo mínima de StreamProvider: Riverpod se suscribe, cancela solo al no haber oyentes, y entrega AsyncValue a la UI.' },
+    { id: 'prodlist',col: 'state', y: 310, nombre: 'productListProvider', sub: 'product_list_controller.dart · AsyncNotifier',
+      desc: 'AsyncNotifier<List<Product>>: build() async → AsyncLoading automático → AsyncData/AsyncError. refresh() usa AsyncValue.guard: el try/catch idiomático de Riverpod.' },
+
+    { id: 'repo',    col: 'data', y: 70,  nombre: 'AuthRepository',  sub: 'auth_repository.dart',
+      desc: 'Combina dos fuentes: AuthApi (red) + SecureStore (disco). login() = pedir tokens y guardarlos; restore() = validar sesión guardada; logout() = limpiar. El único que sabe que existen AMBAS fuentes.' },
+    { id: 'authapi', col: 'data', y: 160, nombre: 'AuthApi',         sub: 'auth_api.dart',
+      desc: 'HTTP puro contra /auth/*: login, me, refresh (¡refresh ya existe aquí! solo falta que el interceptor lo use — curso 03). Sin estado, recibe Dio por constructor: testeable con un Dio falso.' },
+    { id: 'dio',     col: 'data', y: 260, nombre: 'Dio (único)',     sub: 'providers.dart · dioProvider',
+      desc: 'El cliente HTTP compartido: baseUrl + interceptor que agrega el Bearer en cada request leyendo SecureStore. Aquí vive el TODO del refresh (curso 03) y el TODO de cert pinning (curso 09). Se crea UNA vez; todas las APIs lo heredan.' },
+    { id: 'prodapi', col: 'data', y: 360, nombre: 'ProductApi',      sub: 'product_api.dart',
+      desc: 'HTTP puro contra /products: list() y get(id). Mapea JSON → Product (domain) y nada más. Hereda el Bearer gratis por usar el Dio compartido.' },
+    { id: 'store',   col: 'data', y: 460, nombre: 'SecureStore',     sub: 'secure_store.dart',
+      desc: 'Wrapper de flutter_secure_storage: saveTokens / readAccess / readRefresh / clear. Detrás: Keychain (iOS) y Keystore (Android) — almacenamiento cifrado por el sistema operativo.' },
+
+    { id: 'apigo',   col: 'ext', y: 260, nombre: 'API Go',           sub: 'flutter-go · :9090',
+      desc: 'Tu backend: /auth/login, /auth/refresh, /auth/me (con middleware), /products. JWT HS256: access 15 min + refresh 7 días, claims typ y jti, rechazo de alg=none. Crece a la par del template.' },
+    { id: 'keychain',col: 'ext', y: 460, nombre: 'Keychain / Keystore', sub: 'sistema operativo',
+      desc: 'El almacén cifrado del dispositivo. iOS: Keychain (protegido por Secure Enclave); Android: Keystore. Los tokens viven aquí, nunca en un archivo plano.' },
+  ];
+
+  //           de        a         tipo
+  const ARISTAS = [
+    ['login',   'auth',    'riverpod'],
+    ['home',    'auth',    'riverpod'],
+    ['router',  'auth',    'riverpod'],
+    ['live',    'clock',   'riverpod'],
+    ['plist',   'prodlist','riverpod'],
+    ['pdetail', 'prodapi', 'cruce'],
+    ['auth',    'repo',    'riverpod'],
+    ['prodlist','prodapi', 'riverpod'],
+    ['repo',    'authapi', 'di'],
+    ['repo',    'store',   'di'],
+    ['authapi', 'dio',     'di'],
+    ['prodapi', 'dio',     'di'],
+    ['dio',     'store',   'riverpod'],
+    ['dio',     'apigo',   'http'],
+    ['store',   'keychain','io'],
+  ];
+
+  const ESTILOS = {
+    riverpod: { stroke: '#3d8fd9', dash: '',    w: 2.2 },
+    di:       { stroke: '#8aa3bd', dash: '',    w: 2.2 },
+    http:     { stroke: '#3d8fd9', dash: '7 5', w: 2.2 },
+    io:       { stroke: '#8aa3bd', dash: '2 4', w: 2.2 },
+    cruce:    { stroke: '#d64541', dash: '7 5', w: 2.8 },
+  };
+
+  const svg = document.getElementById('diagrama');
+  const panel = document.getElementById('panel-info');
+  const porId = Object.fromEntries(NODOS.map(n => [n.id, n]));
+  const el = (tag, attrs) => {
+    const e = document.createElementNS(NS, tag);
+    for (const k in attrs) e.setAttribute(k, attrs[k]);
+    return e;
+  };
+
+  // flechas (una por color)
+  const defs = el('defs', {});
+  [['fa', '#3d8fd9'], ['fg', '#8aa3bd'], ['fr', '#d64541']].forEach(([id, color]) => {
+    const m = el('marker', { id, viewBox: '0 0 10 10', refX: 9, refY: 5,
+      markerWidth: 7, markerHeight: 7, orient: 'auto-start-reverse' });
+    m.appendChild(el('path', { d: 'M 0 0 L 10 5 L 0 10 z', fill: color }));
+    defs.appendChild(m);
+  });
+  svg.appendChild(defs);
+
+  // títulos de columna
+  COL_TITULOS.forEach(c => {
+    const t = el('text', { x: c.x, y: 18, class: 'col-titulo' });
+    t.textContent = c.t;
+    svg.appendChild(t);
+  });
+
+  // aristas (debajo de los nodos)
+  const capaAristas = el('g', {});
+  svg.appendChild(capaAristas);
+  const aristasSvg = [];
+
+  ARISTAS.forEach(([de, a, tipo]) => {
+    const n1 = porId[de], n2 = porId[a];
+    const x1 = COL_X[n1.col] + W, y1 = n1.y + H / 2;
+    const x2 = COL_X[n2.col],     y2 = n2.y + H / 2;
+    const s = ESTILOS[tipo];
+    const marker = tipo === 'cruce' ? 'fr' : (s.stroke === '#3d8fd9' ? 'fa' : 'fg');
+    const dx = Math.max(50, (x2 - x1) * 0.45);
+    const p = el('path', {
+      d: `M ${x1} ${y1} C ${x1 + dx} ${y1}, ${x2 - dx} ${y2}, ${x2} ${y2}`,
+      fill: 'none', stroke: s.stroke, 'stroke-width': s.w,
+      'stroke-dasharray': s.dash, 'marker-end': `url(#${marker})`,
+    });
+    p.dataset.de = de; p.dataset.a = a;
+    capaAristas.appendChild(p);
+    aristasSvg.push(p);
+  });
+
+  // banda de domain
+  const banda = el('g', { class: 'banda-domain' });
+  banda.appendChild(el('rect', { x: 20, y: 545, width: 940, height: 52, rx: 10 }));
+  const bt1 = el('text', { x: 40, y: 567, style: 'font-family: var(--f-mono); font-size: 12.5px; font-weight: 600;', fill: '#9b59b6' });
+  bt1.textContent = 'domain/ — User · Token · AuthState · Product';
+  const bt2 = el('text', { x: 40, y: 585, class: 'sub', style: 'font-family: var(--f-mono); font-size: 10.5px;', fill: 'currentColor', opacity: 0.6 });
+  bt2.textContent = 'el vocabulario: todas las capas usan estos tipos; domain no importa a nadie (por eso no lleva flechas)';
+  banda.appendChild(bt1); banda.appendChild(bt2);
+  svg.appendChild(banda);
+
+  // nodos
+  const nodosSvg = {};
+  NODOS.forEach(n => {
+    const g = el('g', { class: 'nodo-svg', tabindex: 0, role: 'button', 'aria-label': n.nombre });
+    const x = COL_X[n.col];
+    g.appendChild(el('rect', { x, y: n.y, width: W, height: H, rx: 9 }));
+    const t1 = el('text', { x: x + 12, y: n.y + 19 });
+    t1.textContent = n.nombre;
+    const t2 = el('text', { x: x + 12, y: n.y + 35, class: 'sub' });
+    t2.textContent = n.sub;
+    g.appendChild(t1); g.appendChild(t2);
+    svg.appendChild(g);
+    nodosSvg[n.id] = g;
+    g.addEventListener('click', ev => { ev.stopPropagation(); seleccionar(n.id); });
+    g.addEventListener('keydown', ev => {
+      if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); seleccionar(n.id); }
+    });
+  });
+
+  // cadena completa: BFS hacia dependencias y hacia dependientes
+  function cadena(id) {
+    const nodos = new Set([id]);
+    const aristas = new Set();
+    let frontera = [id];
+    while (frontera.length) {           // hacia abajo (qué usa)
+      const sig = [];
+      ARISTAS.forEach(([de, a], i) => {
+        if (frontera.includes(de) && !aristas.has(i + ':d')) {
+          aristas.add(i + ':d');
+          if (!nodos.has(a)) { nodos.add(a); sig.push(a); }
+        }
+      });
+      frontera = sig;
+    }
+    frontera = [id];
+    while (frontera.length) {           // hacia arriba (quién lo usa)
+      const sig = [];
+      ARISTAS.forEach(([de, a], i) => {
+        if (frontera.includes(a) && !aristas.has(i + ':u')) {
+          aristas.add(i + ':u');
+          if (!nodos.has(de)) { nodos.add(de); sig.push(de); }
+        }
+      });
+      frontera = sig;
+    }
+    const idx = new Set([...aristas].map(k => parseInt(k)));
+    return { nodos, idx };
+  }
+
+  function seleccionar(id) {
+    const { nodos, idx } = cadena(id);
+    NODOS.forEach(n => nodosSvg[n.id].classList.toggle('apagado', !nodos.has(n.id)));
+    NODOS.forEach(n => nodosSvg[n.id].classList.toggle('activo', n.id === id));
+    aristasSvg.forEach((p, i) => p.classList.toggle('apagado', !idx.has(i)));
+    const n = porId[id];
+    panel.innerHTML = '<h4>' + n.nombre +
+      ' <span class="pill">' + n.sub.replace(' ⚠', '') + '</span></h4><p>' + n.desc + '</p>';
+  }
+
+  function reiniciar() {
+    NODOS.forEach(n => { nodosSvg[n.id].classList.remove('apagado', 'activo'); });
+    aristasSvg.forEach(p => p.classList.remove('apagado'));
+    panel.innerHTML = '<h4>Explora el diagrama</h4><p>Click en un nodo → su cadena de ' +
+      'dependencias se ilumina y aquí aparece su rol. Click en el fondo para reiniciar.</p>';
+  }
+  svg.addEventListener('click', reiniciar);
+})();
+
+// ═══════════════════════════════════════════════════════════════
+// Flujo de seguridad: reveal al hacer scroll
+// ═══════════════════════════════════════════════════════════════
+(function () {
+  const pasos = document.querySelectorAll('#flujo-seguridad li');
+  const obs = new IntersectionObserver(entradas => {
+    entradas.forEach(e => { if (e.isIntersecting) { e.target.classList.add('visible'); obs.unobserve(e.target); } });
+  }, { threshold: 0.25 });
+  pasos.forEach(p => obs.observe(p));
+})();
+
+// ═══════════════════════════════════════════════════════════════
+// Hoja de ruta: progreso persistente (localStorage de este navegador)
+// ═══════════════════════════════════════════════════════════════
+(function () {
+  const KEY = 'curso01-etapas';
+  let hechas;
+  try { hechas = new Set(JSON.parse(localStorage.getItem(KEY) || '[]')); }
+  catch (_) { hechas = new Set(); }
+
+  const boxes = document.querySelectorAll('.etapa input[type=checkbox]');
+  const barra = document.getElementById('progreso-etapas');
+
+  function pintar() {
+    const n = document.querySelectorAll('.etapa input:checked').length;
+    barra.textContent = '▸ ' + n + ' de ' + boxes.length + ' etapas completadas' +
+      (n === boxes.length ? ' — migración lista para revisión 🎉' : '');
+  }
+
+  boxes.forEach(b => {
+    if (hechas.has(b.dataset.etapa)) b.checked = true;
+    b.addEventListener('change', () => {
+      if (b.checked) hechas.add(b.dataset.etapa); else hechas.delete(b.dataset.etapa);
+      try { localStorage.setItem(KEY, JSON.stringify([...hechas])); } catch (_) {}
+      pintar();
+    });
+  });
+  pintar();
+})();
+</script>
+
+</body>
+</html>
