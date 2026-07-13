@@ -740,8 +740,83 @@ flutter test                                     # → verde</code></pre>
         <li>Correr la app: login → productos → detalle (Hero) → back → logout → guard te regresa a /login. Todo igual que antes.</li>
         <li>Bonus del Ejercicio 3: correr una vez con <code>--dart-define=API_URL=…</code> y confirmar que pega a esa URL.</li>
       </ul>
-      <p><em>Con esto, commit en la rama y reporte en la sesión: se revisa la estructura
-      resultante y el Curso 01 se marca completado.</em></p>
+      <p><strong>Hallazgo de la validación (2026-07-12):</strong> <code>flutter test</code>
+      estaba en rojo por el <em>test de andamiaje</em> — el "Counter increments smoke test"
+      que <code>flutter create</code> genera para la app contador de ejemplo. Nunca probó nada
+      de este proyecto. El reemplazo: tests de <code>domain</code> reales — puros, sin mocks,
+      y que fijan el <strong>contrato JSON con el API Go</strong> (si el server cambia un campo,
+      esto avisa). Nota que <code>test/</code> replica la estructura feature-first de
+      <code>lib/</code>:</p>
+<pre><code>git rm test/widget_test.dart
+mkdir -p test/features/products/domain test/features/auth/domain</code></pre>
+      <span class="archivo">test/features/products/domain/product_test.dart</span>
+<pre><code>import 'package:flutter_test/flutter_test.dart';
+import 'package:mini_flutter/features/products/domain/product.dart';
+
+void main() {
+  group('Product', () {
+    final json = {
+      'id': 'p1',
+      'codigo': 'A-001',
+      'nombre': 'Cemento gris',
+      'descripcion': null,
+      'tipo': 'bien',
+      'price_cents': 12550,
+      'unidad': 'saco',
+      'activo': true,
+      'created_at': '2026-07-12T10:00:00Z',
+      'updated_at': '2026-07-12T10:00:00Z',
+    };
+
+    test('fromJson mapea el contrato del API Go', () {
+      final p = Product.fromJson(json);
+      expect(p.id, 'p1');
+      expect(p.tipo, ProductType.bien);
+      expect(p.priceCents, 12550);
+      expect(p.priceLabel, r'$125.50');
+    });
+
+    test('felCode: bien=1, servicio=2 (contrato FEL)', () {
+      expect(ProductType.bien.felCode, 1);
+      expect(ProductType.servicio.felCode, 2);
+    });
+
+    test('toJson no manda campos que son del servidor', () {
+      final out = Product.fromJson(json).toJson();
+      expect(out.containsKey('id'), isFalse);
+      expect(out.containsKey('created_at'), isFalse);
+    });
+  });
+}</code></pre>
+      <span class="archivo">test/features/auth/domain/auth_state_test.dart</span>
+<pre><code>import 'package:flutter_test/flutter_test.dart';
+import 'package:mini_flutter/features/auth/domain/auth.dart';
+
+void main() {
+  group('AuthState', () {
+    test('unknown y unauthenticated no llevan usuario', () {
+      expect(const AuthState.unknown().status, AuthStatus.unknown);
+      expect(const AuthState.unknown().user, isNull);
+      expect(
+        const AuthState.unauthenticated().status,
+        AuthStatus.unauthenticated,
+      );
+    });
+
+    test('authenticated lleva el usuario', () {
+      const u = User(id: 'u1', email: 'erik@gibbor.app');
+      const s = AuthState.authenticated(u);
+      expect(s.status, AuthStatus.authenticated);
+      expect(s.user?.email, 'erik@gibbor.app');
+    });
+  });
+}</code></pre>
+      <p><em>Detalle menor del mismo hallazgo: en <code>dio_provider.dart</code> los
+      comentarios del refresh y del cert pinning perdieron su prefijo — restáuralos como
+      <code>// TODO(curso-03):</code> y <code>// TODO(cert-pinning):</code> para que el panel
+      de TODOs del IDE los siga rastreando.</em></p>
+      <p><em>Con <code>flutter test</code> en verde y el flujo manual confirmado: commit,
+      reporte en la sesión, y el Curso 01 se marca completado.</em></p>
     </div>
 
     <div class="insight">
