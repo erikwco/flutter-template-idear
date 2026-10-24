@@ -1,0 +1,521 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="darkreader-lock">
+<title>Curso 02 · Riverpod a fondo — Escuela Flutter</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@500;700;800&family=Instrument+Sans:ital,wght@0,400;0,600;1,400&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/base.css">
+<style>
+  /* ---- estilos exclusivos de este curso ---- */
+
+  /* tabla de recuerdos */
+  .tabla-recuerdo { width: 100%; border-collapse: collapse; margin: 1.5rem 0; font-size: 0.92rem; }
+  .tabla-recuerdo th, .tabla-recuerdo td {
+    text-align: left; padding: 0.7rem 0.9rem;
+    border: 1px solid var(--linea); vertical-align: top;
+  }
+  .tabla-recuerdo th { font-family: var(--f-mono); font-size: 0.78rem; background: var(--resalte); }
+  .tabla-recuerdo td:first-child { font-style: italic; color: var(--ink-suave); }
+  .veredicto-chip { font-family: var(--f-mono); font-size: 0.7rem; border-radius: 999px; padding: 0.1rem 0.55rem; white-space: nowrap; }
+  .vc-ok { background: #e2f3ea; color: var(--verde); }
+  .vc-casi { background: #fdf3e2; color: var(--ambar); }
+  @media (prefers-color-scheme: dark) { .vc-ok { background: #11331f; } .vc-casi { background: #3a2c10; } }
+
+  /* demo watch/read/listen */
+  .demo-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.9rem; margin: 1rem 0; }
+  @media (max-width: 46rem) { .demo-grid { grid-template-columns: 1fr; } }
+  .wcard {
+    border: 1px solid var(--linea); border-radius: var(--radio);
+    background: var(--paper); padding: 0.9rem 1rem;
+    font-family: var(--f-mono); font-size: 0.8rem;
+  }
+  .wcard h5 { margin: 0 0 0.6rem; font-size: 0.78rem; color: var(--azul); font-weight: 600; }
+  .wcard .valor { font-size: 0.95rem; color: var(--ink); min-height: 2.4em; }
+  .wcard .contador { color: var(--ink-suave); font-size: 0.72rem; margin-top: 0.5rem; }
+  .wcard.flash { animation: flashRebuild 0.6s ease; }
+  @keyframes flashRebuild {
+    0% { background: #fdf3e2; border-color: var(--ambar); }
+    100% { background: var(--paper); border-color: var(--linea); }
+  }
+  .log-listen {
+    margin-top: 0.5rem; max-height: 7.5em; overflow-y: auto;
+    font-size: 0.72rem; color: var(--texto-prosa);
+    border-top: 1px dashed var(--linea); padding-top: 0.4rem;
+  }
+  .log-listen div { padding: 0.1rem 0; }
+  .botonera { display: flex; flex-wrap: wrap; gap: 0.6rem; margin: 0.75rem 0; }
+  .botonera button {
+    font-family: var(--f-mono); font-size: 0.82rem;
+    border: none; border-radius: 8px; padding: 0.5rem 1rem; cursor: pointer;
+    background: var(--azul); color: #fff;
+  }
+  .botonera button.secundario { background: transparent; color: var(--azul); border: 1.5px solid var(--azul); }
+
+  /* catálogo de providers */
+  .tabla-catalogo { width: 100%; border-collapse: collapse; margin: 1.5rem 0; font-size: 0.88rem; }
+  .tabla-catalogo th, .tabla-catalogo td { text-align: left; padding: 0.65rem 0.8rem; border: 1px solid var(--linea); vertical-align: top; }
+  .tabla-catalogo th { font-family: var(--f-mono); font-size: 0.75rem; background: var(--resalte); }
+  .tabla-catalogo code { white-space: nowrap; }
+  .celda-mono { font-family: var(--f-mono); font-size: 0.8rem; }
+
+  /* ejercicios (mismo look del curso 01) */
+  .ejercicio {
+    border: 1px dashed var(--ambar); border-radius: var(--radio);
+    background: var(--card); padding: 1rem 1.25rem; margin: 1rem 0;
+  }
+  .ejercicio h4 { margin: 0 0 0.4rem; font-family: var(--f-mono); font-size: 0.9rem; color: var(--ambar); }
+  .ejercicio p { margin: 0.3rem 0; font-size: 0.93rem; }
+</style>
+</head>
+<body>
+
+<header class="curso-header">
+  <div class="contenedor">
+    <a class="volver" href="index.html">← índice</a>
+    <p class="eyebrow">Curso 02 · fundamentos</p>
+    <h1 class="titulo-display">Riverpod a fondo</h1>
+    <p class="lead">El grafo reactivo: qué hacen realmente ref.read, watch y listen; el catálogo
+    completo de providers del template; y lo nuevo de la v3 que te va a sorprender.</p>
+  </div>
+</header>
+
+<main class="prose">
+  <div class="contenedor">
+
+    <h2>El modelo mental: el grafo vive fuera del árbol</h2>
+    <p>
+      En React, el estado vive <em>dentro</em> del árbol de componentes: un hook pertenece a
+      su componente, un contexto a su subárbol. Riverpod invierte eso: los providers forman
+      un <strong>grafo de dependencias que vive fuera del árbol de widgets</strong> (dentro
+      del <code>ProviderScope</code> que envuelve tu app en <code>main.dart</code>). Los
+      widgets no "contienen" estado global — se <em>enchufan</em> a nodos del grafo.
+    </p>
+    <div class="comparacion">
+      <div>
+        <span class="archivo">React (Gibbor)</span>
+<pre><code>// el estado pertenece al árbol
+&lt;AuthProvider&gt;        ← contexto atado al subárbol
+  &lt;Products /&gt;        ← useQuery vive en el componente
+&lt;/AuthProvider&gt;</code></pre>
+      </div>
+      <div>
+        <span class="archivo">Riverpod (mini_flutter)</span>
+<pre><code>// el grafo existe aparte; los widgets se enchufan
+dioProvider ← productApiProvider ← productListProvider
+                                         ↑ watch
+                              ProductListScreen (widget)</code></pre>
+      </div>
+    </div>
+    <p>
+      Ya viste este grafo completo en el <a href="curso-01-arquitectura.html">diagrama del
+      curso 01</a>. La consecuencia práctica: un provider puede depender de otro provider
+      (con el mismo <code>ref</code>), y la invalidación se propaga sola por el grafo — sin
+      prop-drilling, sin context hell.
+    </p>
+
+    <h2>Tu recuerdo, auditado</h2>
+    <p>Esto fue lo que recordabas. Veredicto línea por línea:</p>
+    <table class="tabla-recuerdo">
+      <tr><th>Lo que recordabas</th><th>Veredicto</th><th>La versión precisa</th></tr>
+      <tr>
+        <td>"ref.read → un solo valor"</td>
+        <td><span class="veredicto-chip vc-casi">casi</span></td>
+        <td><code>ref.read</code> es una <strong>lectura puntual sin suscripción</strong>: te da
+        el valor de ahora y no te entiendes más. No es que devuelva "un" valor — es que no te
+        avisa cuando cambie. La docs oficial además pide: <em>si puedes usar watch, prefiere
+        watch</em>.</td>
+      </tr>
+      <tr>
+        <td>"ref.watch y ref.listen → me suscribo a los cambios"</td>
+        <td><span class="veredicto-chip vc-ok">correcto</span></td>
+        <td>Ambos se suscriben, pero reaccionan distinto: <code>watch</code>
+        <strong>reconstruye</strong> (el widget o el provider que lo llama);
+        <code>listen</code> <strong>ejecuta un callback</strong> <code>(previous, next)</code>
+        sin reconstruir — para efectos: toasts, navegación, logs.</td>
+      </tr>
+      <tr>
+        <td>"provider → devuelve el state (AuthState); provider.notifier → los métodos (login/logout)"</td>
+        <td><span class="veredicto-chip vc-ok">correcto</span></td>
+        <td>Tal cual: <code>watch(authControllerProvider)</code> → <code>AuthState</code>;
+        <code>read(authControllerProvider.notifier)</code> → la instancia de
+        <code>AuthController</code> con sus métodos (y llamarla nunca reconstruye nada por sí
+        mismo — reconstruye lo que esté <em>watching</em> el estado que el método mute).</td>
+      </tr>
+    </table>
+    <p><em>Nota fina: los métodos viven en el <strong>controller</strong>
+    (<code>AuthController</code>), no en el repositorio — en tu ejemplo dijiste
+    "AuthRepositoryProvider", pero a los repositorios nunca les hablamos desde la UI.</em></p>
+
+    <h2>Los tres verbos, en vivo</h2>
+    <p>
+      Tres "widgets" enchufados al mismo <code>authProvider</code> simulado, cada uno con un
+      verbo distinto. Pulsa <code>login()</code> / <code>logout()</code> y observa quién
+      reacciona y cómo (el flash ámbar = rebuild):
+    </p>
+
+    <div class="demo">
+      <p class="demo-titulo">demo · watch vs read vs listen</p>
+      <div class="botonera">
+        <button id="btn-login">login()</button>
+        <button id="btn-logout">logout()</button>
+        <button id="btn-rebuild" class="secundario">rebuild externo del widget con read</button>
+      </div>
+      <div class="demo-grid">
+        <div class="wcard" id="card-watch">
+          <h5>ref.watch(authProvider)</h5>
+          <div class="valor" id="valor-watch">—</div>
+          <div class="contador" id="rebuilds-watch">rebuilds: 0</div>
+        </div>
+        <div class="wcard" id="card-read">
+          <h5>ref.read(authProvider) <span style="color:var(--ink-suave)">· leído en build</span></h5>
+          <div class="valor" id="valor-read">—</div>
+          <div class="contador" id="rebuilds-read">rebuilds: 0</div>
+        </div>
+        <div class="wcard" id="card-listen">
+          <h5>ref.listen(authProvider, (prev, next) ⇒ …)</h5>
+          <div class="valor" style="color:var(--ink-suave)">no muestra estado — dispara efectos</div>
+          <div class="log-listen" id="log-listen"></div>
+        </div>
+      </div>
+      <p style="color: var(--ink-suave); font-size: 0.9rem; margin-bottom: 0;">
+        Lo que hay que ver: ① <code>watch</code> se reconstruye con cada cambio.
+        ② <code>read</code> se queda con el valor de <em>cuando se construyó</em> — solo se
+        actualiza si algo más lo reconstruye (tercer botón). Ese desfase silencioso es el bug
+        clásico de usar read donde iba watch. ③ <code>listen</code> no se reconstruye: recibe
+        <code>(previous, next)</code> y hace su efecto.
+      </p>
+    </div>
+
+    <div class="insight">
+      <strong>★ Insight.</strong> La docs define <code>watch</code> literalmente como
+      <em>listen + invalidarse a sí mismo</em>:
+      <code>listen(provider, (_, __) =&gt; invalidateSelf()); return sub.read();</code>.
+      O sea: los tres verbos son el mismo mecanismo de suscripción con distinta reacción —
+      reconstruirse (watch), callback (listen), o ninguna (read).
+    </div>
+
+    <h3>¿Dónde es legal cada verbo?</h3>
+    <table class="tabla-catalogo">
+      <tr><th></th><th>build de widget / cuerpo de provider</th><th>callbacks (onPress, métodos del notifier)</th></tr>
+      <tr>
+        <td class="celda-mono">watch</td>
+        <td>✅ el lugar correcto — declara dependencias</td>
+        <td>🚫 lanza error: no hay nada que reconstruir después</td>
+      </tr>
+      <tr>
+        <td class="celda-mono">read</td>
+        <td>⚠️ compila, pero crea el desfase de la demo — evítalo</td>
+        <td>✅ el lugar correcto — acción puntual</td>
+      </tr>
+      <tr>
+        <td class="celda-mono">listen</td>
+        <td>✅ en la raíz del build (widgets) o en build de notifiers</td>
+        <td>🚫 se registraría un listener por cada tap</td>
+      </tr>
+    </table>
+    <p>
+      Regla nemotécnica: <strong>watch para construir, read para actuar, listen para
+      reaccionar</strong>. En React: watch ≈ suscripción de un hook, read ≈ leer un
+      <code>ref.current</code>, listen ≈ <code>useEffect</code> con dependencia.
+    </p>
+
+    <h2>El catálogo: los providers de tu template</h2>
+    <p>Todos los tipos que ya usas, con su ejemplo real:</p>
+    <table class="tabla-catalogo">
+      <tr><th>Tipo</th><th>En el template</th><th><code>watch</code> devuelve</th><th>Úsalo para</th></tr>
+      <tr>
+        <td class="celda-mono">Provider&lt;T&gt;</td>
+        <td><code>dioProvider</code>, <code>authApiProvider</code>, <code>authRepositoryProvider</code>, <code>productApiProvider</code>, <code>goRouterProvider</code></td>
+        <td><code>T</code> directo</td>
+        <td>Objetos que se construyen una vez y se derivan de otros: infraestructura, servicios. Sin estado mutable propio.</td>
+      </tr>
+      <tr>
+        <td class="celda-mono">NotifierProvider</td>
+        <td><code>authControllerProvider</code></td>
+        <td>el estado (<code>AuthState</code>)</td>
+        <td>Estado <em>síncrono</em> mutable con métodos. El notifier es la única puerta de mutación.</td>
+      </tr>
+      <tr>
+        <td class="celda-mono">AsyncNotifierProvider</td>
+        <td><code>productListProvider</code></td>
+        <td><code>AsyncValue&lt;List&lt;Product&gt;&gt;</code></td>
+        <td>Estado que <em>nace</em> de una operación async y además tiene métodos (refresh, y pronto create/update).</td>
+      </tr>
+      <tr>
+        <td class="celda-mono">FutureProvider (.family)</td>
+        <td><code>productProvider(id)</code></td>
+        <td><code>AsyncValue&lt;Product&gt;</code></td>
+        <td>Lecturas async <em>sin</em> métodos. <code>.family</code> lo parametriza: cada <code>id</code> es un nodo distinto del grafo, con caché propio.</td>
+      </tr>
+      <tr>
+        <td class="celda-mono">StreamProvider</td>
+        <td><code>clockProvider</code></td>
+        <td><code>AsyncValue&lt;DateTime&gt;</code></td>
+        <td>Fuentes que emiten muchas veces. El caso fuerte (SSE de inventario) llega en el curso 07.</td>
+      </tr>
+    </table>
+
+    <div class="insight">
+      <strong>★ Insight.</strong> Fíjate el patrón: todo lo async llega a la UI como
+      <code>AsyncValue&lt;T&gt;</code> — loading/data/error como <em>datos</em>, no como
+      excepciones ni banderas sueltas. Tu <code>ProductListScreen</code> ya lo explota con
+      <code>.when(...)</code>. En React esto es lo que te da React Query con
+      <code>isLoading/data/error</code>, pero aquí es un tipo sellado del lenguaje: el
+      compilador te obliga a manejar los tres casos.
+    </div>
+
+    <h2>Notifier por dentro (y un mito de tu código)</h2>
+    <p>
+      Dos hechos de la docs que ordenan todo: ① <code>build()</code> <strong>se re-ejecuta</strong>
+      cuando cambia una dependencia observada con <code>watch</code>, pero <strong>la instancia
+      del notifier se preserva</strong> (sus campos sobreviven). ② Dentro de
+      <code>build()</code> es <em>seguro y preferible</em> usar <code>ref.watch</code>; en los
+      <em>métodos</em> (como <code>refresh()</code>) va <code>ref.read</code>.
+    </p>
+    <p>
+      Y aquí el mito: tu <code>product_list_controller.dart</code> tiene un comentario que dice
+      <em>"Dentro de métodos/build usás ref.read (no watch): no querés re-suscribir acá"</em>.
+      Para métodos: cierto. Para <code>build()</code>: <strong>falso</strong> — es exactamente
+      el lugar donde watch declara dependencias. Hoy no te muerde porque
+      <code>productApiProvider</code> nunca cambia, pero el comentario te enseñaría el hábito
+      equivocado cada vez que lo leas. Lo corriges en el ejercicio 2.
+    </p>
+    <p>Detalles que te ahorrarán sustos:</p>
+    <ul>
+      <li>En un <code>Notifier</code> síncrono, leer <code>state</code> dentro de
+      <code>build()</code> antes de asignarlo lanza excepción (aún no existe).
+      <code>AsyncNotifier</code> no sufre esto: arranca en <code>AsyncLoading</code> solo.</li>
+      <li><code>AsyncValue.guard(fn)</code> = el try/catch idiomático: éxito →
+      <code>AsyncData</code>, excepción → <code>AsyncError</code>. Ya lo usas en
+      <code>refresh()</code>.</li>
+      <li>¿Necesitas el valor resuelto de un provider async dentro de otro?
+      <code>await ref.watch(provider.future)</code> — lo usaremos en el curso 03.</li>
+    </ul>
+
+    <h2>Modificadores: family y autoDispose</h2>
+    <p>
+      <code>.family</code> ya lo dominas (curso 01). El que te falta es
+      <code>.autoDispose</code>, y un dato importante de la v3 con providers declarados a mano:
+      <strong>no es el default</strong> — tus providers viven para siempre salvo que lo pidas.
+      ¿Consecuencia hoy? Cada <code>productProvider(id)</code> que visitas queda cacheado en
+      memoria <em>indefinidamente</em>: visita 200 detalles y tienes 200 productos vivos.
+    </p>
+    <p>Con <code>.autoDispose</code>, el nodo se destruye cuando nadie lo observa — y trae dos
+    herramientas finas, directas de la docs oficial:</p>
+<pre><code>final myProvider = FutureProvider.autoDispose((ref) async {
+  final cancelToken = CancelToken();
+  ref.onDispose(() =&gt; cancelToken.cancel()); // ① sales de la pantalla → se cancela el HTTP
+
+  final response = await dio.get('path', cancelToken: cancelToken);
+  ref.keepAlive();                            // ② si llegó bien, consérvalo en caché
+  return response;
+});</code></pre>
+    <p>
+      El patrón completo es elegante: si el usuario abre y cierra la pantalla a mitad de la
+      request, la request <em>se cancela</em> (①); pero si la data ya llegó,
+      <code>keepAlive()</code> la conserva aunque salgas (②). Cache con límites, sin
+      bibliotecas extra.
+    </p>
+
+    <h2>Nuevo en v3: el retry automático (te va a pasar)</h2>
+    <p>
+      Riverpod 3 reintenta <strong>solo</strong> los providers async que fallan:
+      <strong>10 reintentos, arrancando en 200 ms y doblando hasta 6.4 s</strong> (ignora
+      errores de programación y excepciones re-lanzadas entre providers). Esto es nuevo — en
+      la v2 no existía.
+    </p>
+    <p>
+      Implicación práctica en TU app: si el API Go está caído, <code>productListProvider</code>
+      no muestra el <code>ErrorView</code> al primer fallo — el skeleton se queda
+      <em>~13 segundos</em> reintentando en silencio antes de rendirse. Para un template
+      production-grade eso puede ser justo lo que quieres (resiliencia gratis)… o un UX
+      confuso (usuario mirando un shimmer eterno). Se controla por provider:
+    </p>
+<pre><code>final productListProvider =
+    AsyncNotifierProvider&lt;ProductListNotifier, List&lt;Product&gt;&gt;(
+      ProductListNotifier.new,
+      retry: (retryCount, error) =&gt; null, // null = no reintentar
+      // o una política propia:
+      // retry: (n, e) =&gt; n &lt; 3 ? Duration(milliseconds: 500 * n) : null,
+    );</code></pre>
+    <p>En el ejercicio 3 lo vas a <em>ver</em> antes de decidir la política del template.</p>
+
+    <h2>Bonus: select, el bisturí de watch</h2>
+    <p>
+      <code>watch</code> reconstruye ante <em>cualquier</em> cambio del estado observado.
+      <code>select</code> lo afina: observa solo una proyección.
+    </p>
+<pre><code>// HomeScreen se reconstruye ante CUALQUIER cambio de AuthState:
+final auth = ref.watch(authControllerProvider);
+
+// Con select, solo si cambia el email:
+final email = ref.watch(
+  authControllerProvider.select((s) =&gt; s.user?.email),
+);</code></pre>
+    <p>Es el equivalente a los selectores de Zustand/Redux. Con estados pequeños como
+    <code>AuthState</code> es micro-optimización; con el dominio ERP (curso 10) será
+    higiene básica.</p>
+
+    <h2>Ejercicios (tú escribes)</h2>
+
+    <div class="ejercicio">
+      <h4>Ejercicio 1 · autoDispose + cancelación en el detalle de producto</h4>
+      <p><strong>Predicción antes de tocar nada:</strong> con el código actual, si abres el
+      detalle del producto A, vuelves, y entras al del producto B… ¿cuántas instancias de
+      <code>Product</code> quedan vivas en el grafo? ¿Y después de visitar 50?</p>
+      <p>Luego, en <code>product_detail_controller.dart</code>, aplica el patrón completo:</p>
+<pre><code>import 'package:dio/dio.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:mini_flutter/features/products/data/product_api.dart';
+import 'package:mini_flutter/features/products/domain/product.dart';
+
+/// autoDispose: el detalle se destruye al salir de la pantalla…
+/// …salvo que la carga haya terminado bien (keepAlive) → caché con límites.
+final productProvider = FutureProvider.autoDispose
+    .family&lt;Product, String&gt;((ref, id) async {
+  final cancelToken = CancelToken();
+  ref.onDispose(cancelToken.cancel); // si sales a mitad de carga, se cancela
+
+  final product = await ref
+      .watch(productApiProvider)
+      .get(id, cancelToken: cancelToken);
+
+  ref.keepAlive(); // llegó bien → consérvalo aunque salgas
+  return product;
+});</code></pre>
+      <p>Esto pide un cambio pequeño en <code>ProductApi.get</code> para aceptar el token:</p>
+<pre><code>Future&lt;Product&gt; get(String id, {CancelToken? cancelToken}) async {
+  final res = await _dio.get('/products/$id', cancelToken: cancelToken);
+  return Product.fromJson(res.data as Map&lt;String, dynamic&gt;);
+}</code></pre>
+    </div>
+
+    <div class="ejercicio">
+      <h4>Ejercicio 2 · Derribar el mito del comentario</h4>
+      <p>En <code>product_list_controller.dart</code>: <code>build()</code> debe declarar su
+      dependencia con <code>watch</code>; los métodos siguen con <code>read</code>. Y el
+      comentario engañoso se va:</p>
+<pre><code>class ProductListNotifier extends AsyncNotifier&lt;List&lt;Product&gt;&gt; {
+  @override
+  Future&lt;List&lt;Product&gt;&gt; build() {
+    // build: watch — declara la dependencia (si la API cambiara, rebuild).
+    final api = ref.watch(productApiProvider);
+    return api.list();
+  }
+
+  /// Reintento / pull-to-refresh.
+  Future&lt;void&gt; refresh() async {
+    state = const AsyncLoading();
+    // métodos: read — acción puntual, sin re-suscribir.
+    state = await AsyncValue.guard(
+      () =&gt; ref.read(productApiProvider).list(),
+    );
+  }
+}</code></pre>
+    </div>
+
+    <div class="ejercicio">
+      <h4>Ejercicio 3 · Ver el retry automático con tus propios ojos</h4>
+      <p>Experimento, sin tocar código todavía: ① apaga el API Go, ② abre el listado de
+      productos, ③ cronometra cuánto vive el skeleton antes del ErrorView, ④ enciende el API
+      y dale retry. <strong>Predicción: ¿~cuántos segundos medirás?</strong> (la respuesta
+      sale de la política por defecto descrita arriba).</p>
+      <p>Después decide y aplica la política del template en <code>productListProvider</code>
+      (mi recomendación para datos de lectura: 2–3 reintentos rápidos y rendirse — el
+      pull-to-refresh ya le da al usuario su propio botón de reintentar). Documenta tu
+      decisión con un comentario junto al <code>retry:</code>.</p>
+    </div>
+
+    <div class="ejercicio">
+      <h4>Ejercicio 4 (bonus) · select en HomeScreen</h4>
+      <p>Cambia el <code>watch</code> de <code>HomeScreen</code> para observar solo el email
+      con <code>select</code>. Es un cambio de una línea — el valor está en que veas que el
+      resto de la pantalla deja de depender del <code>AuthState</code> completo.</p>
+    </div>
+
+    <div class="insight">
+      <strong>★ Insight final.</strong> Si miras los cuatro ejercicios juntos, son la misma
+      lección: <em>en Riverpod, el rendimiento y la corrección se deciden en la declaración de
+      dependencias</em> — qué observas (watch/select), cuánto vive (autoDispose/keepAlive) y
+      cómo falla (retry/guard). El código de negocio casi no cambia; cambia el contrato con el
+      grafo.
+    </div>
+
+  </div>
+</main>
+
+<footer class="paginacion">
+  <div class="contenedor" style="display:flex; justify-content:space-between; gap:1rem;">
+    <a href="curso-01-arquitectura.html">← Curso 01</a>
+    <a href="index.html">índice</a>
+    <span style="color: var(--ink-suave)">siguiente: Seguridad I</span>
+  </div>
+</footer>
+
+<script>
+// ═══════════════════════════════════════════════════════════════
+// Demo: watch vs read vs listen sobre un authProvider simulado
+// ═══════════════════════════════════════════════════════════════
+(function () {
+  let estado = { status: 'unauthenticated', email: null };
+  let rebuildsWatch = 0;
+  let rebuildsRead = 0;
+
+  const $ = id => document.getElementById(id);
+  const texto = e => e.status + (e.email ? ' · ' + e.email : '');
+
+  function flash(card) {
+    card.classList.remove('flash');
+    void card.offsetWidth; // reinicia la animación
+    card.classList.add('flash');
+  }
+
+  // watch: se reconstruye con CADA cambio de estado
+  function renderWatch() {
+    rebuildsWatch++;
+    $('valor-watch').textContent = texto(estado);
+    $('rebuilds-watch').textContent = 'rebuilds: ' + rebuildsWatch;
+    flash($('card-watch'));
+  }
+
+  // read: captura el valor SOLO cuando algo más lo reconstruye
+  function renderRead() {
+    rebuildsRead++;
+    $('valor-read').textContent = texto(estado);
+    $('rebuilds-read').textContent = 'rebuilds: ' + rebuildsRead;
+    flash($('card-read'));
+  }
+
+  // listen: callback (previous, next), sin rebuild
+  function notificar(prev, next) {
+    const log = $('log-listen');
+    const linea = document.createElement('div');
+    linea.textContent = '(' + texto(prev) + ') → (' + texto(next) + ')  ⚡ efecto';
+    log.prepend(linea);
+  }
+
+  function mutar(nuevo) {
+    const prev = estado;
+    estado = nuevo;
+    renderWatch();          // watch reacciona solo
+    notificar(prev, estado); // listen reacciona solo
+    // read: nada. Se queda con lo que capturó en su último build.
+  }
+
+  $('btn-login').addEventListener('click', () =>
+    mutar({ status: 'authenticated', email: 'erik@gibbor.app' }));
+  $('btn-logout').addEventListener('click', () =>
+    mutar({ status: 'unauthenticated', email: null }));
+  $('btn-rebuild').addEventListener('click', renderRead);
+
+  // build inicial de los tres
+  renderWatch(); renderRead();
+  rebuildsWatch = 1; rebuildsRead = 1;
+})();
+</script>
+
+</body>
+</html>

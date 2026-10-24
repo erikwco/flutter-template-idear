@@ -811,12 +811,14 @@ void main() {
     });
   });
 }</code></pre>
-      <p><em>Detalle menor del mismo hallazgo: en <code>dio_provider.dart</code> los
-      comentarios del refresh y del cert pinning perdieron su prefijo — restáuralos como
-      <code>// TODO(curso-03):</code> y <code>// TODO(cert-pinning):</code> para que el panel
-      de TODOs del IDE los siga rastreando.</em></p>
-      <p><em>Con <code>flutter test</code> en verde y el flujo manual confirmado: commit,
-      reporte en la sesión, y el Curso 01 se marca completado.</em></p>
+      <p><em>Decisión de Erik sobre los prefijos <code>TODO:</code> — no restaurarlos: el
+      resaltado en neovim distrae. Los pendientes quedan rastreados por otras vías: este
+      curso, los cursos 03 y 09 que apuntan a ese archivo, y
+      <code>grep -rn "refresh\|cert-pinning" lib/core/network/</code>.</em></p>
+      <p><strong>✓ Curso completado el 2026-07-12:</strong> migración validada (analyze 0,
+      greps limpios, 5 tests de domain en verde, flujo manual login → productos → detalle →
+      logout confirmado). Commit "Course 01 - finished" en la rama
+      <code>feature-first</code>.</p>
     </div>
 
     <div class="insight">
